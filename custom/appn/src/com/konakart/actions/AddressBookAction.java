@@ -90,7 +90,9 @@ public class AddressBookAction extends BaseAction
      */
     public void setMaxEntries(String maxEntries)
     {
-        this.maxEntries = maxEntries;
+        
+	System.out.println("maxEntries");
+	this.maxEntries = maxEntries;
     }
 
 }
