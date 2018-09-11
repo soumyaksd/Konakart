@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+     KonaKart struts portlet config file.
+	(c) 2007 DS Data Systems UK Ltd, All rights reserved.
+-->
+<config>
+  <render-context>
+    <attribute name="errors"/>
+    <attribute name="message"/>
+    <attribute name="RegisterCustomerForm"/>
+    <attribute name="LoginForm"/>
+    <attribute name="WriteReviewForm"/>
+    <attribute name="ChangePasswordForm"/>
+    <attribute name="CheckoutForm"/>
+    <attribute name="ChangeAddrForm"/>
+    <attribute name="ForgottenPasswordForm"/>
+  </render-context>
+  <portlet-url-type>
+    <action path="/SelectCat"/>
+    <action path="/SelectProd"/>
+    <action path="/SortProd"/>
+    <action path="/ShowSearchByManufacturerResultsByLink"/>
+    <action path="/ShowProductsForManufacturer"/>
+    <action path="/NavigateProd"/>
+    <action path="/NavigateRev"/>
+    <action path="/NavigateAllOrders"/>
+    <action path="/NavigateAllRev"/>
+    <resource path="/images/"/> 
+  </portlet-url-type>
+</config>  

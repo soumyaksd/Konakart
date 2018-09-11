@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/konakart_build/lib/commons-logging-1.1.1.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/konakart_utils"/>
+	<classpathentry kind="lib" path="/konakart_build/lib/commons-lang-2.4.jar"/>
+	<classpathentry kind="lib" path="/konakart_build/lib/commons-configuration-1.7.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/konakartadmin"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/konakart"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/portal-kernel.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/portal-service.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/portlet.jar"/>
+	<classpathentry kind="output" path="classes"/>
+</classpath>

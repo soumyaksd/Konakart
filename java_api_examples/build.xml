@@ -1,0 +1,673 @@
+<project name="konakart_java_api_examples" default="build" basedir=".">
+
+	<!-- === PROPERTIES === -->
+	<property environment="env" />
+
+	<!-- build.local.properties will override the build.properties file if present -->
+	<property file="../custom/build.local.properties" />
+	<property file="../custom/build.properties" />
+
+	<dirname property="examples.home" file="${ant.file}" />
+
+	<available file="${examples.home}/src/com/konakart/apiexamples/SearchForProductsWithSnippets.java" 
+	       property="SearchForProductsWithSnippets.present" />
+
+	<available file="${examples.home}/src/com/konakart/apiexamples/CustomStoreServiceExample.java" 
+	       property="CustomStoreServiceExample.present" />
+
+    <available file="${examples.home}/../webapps/konakart/WEB-INF/lib/konakart_custom_store_service-${konakart.version}.jar" 
+	       property="CustomStoreServiceJar.present" />
+	<available file="${examples.home}/../webapps/konakartadmin/WEB-INF/lib/konakartadmin_custom_admin_service-${konakart.version}.jar"
+	       property="CustomAdminServiceJar.present" />
+
+	<available file="../custom/database/build-torque.xml" property="torque.build.src.present" />
+	
+	<target name="kktimestamp">
+		<tstamp>
+			<format property="current.time" pattern="d-MMMM-yyyy hh:mm:ss.S" />
+		</tstamp>
+
+		<echo message="${message} ${current.time}" />      
+	</target>
+	
+   <!-- Set java.source if it hasn't already been defined -->
+	<condition property="java.source" value="1.7">
+		<not>
+			<isset property="java.source" />
+		</not>
+	</condition>
+
+	<!-- Set java.target if it hasn't already been defined -->
+	<condition property="java.target" value="1.7">
+		<not>
+			<isset property="java.target" />
+		</not>
+	</condition>
+
+	<!-- Set "theStoreId" - if storeId has been defined -->
+	<condition property="theStoreId" value="${StoreId}">
+		<isset property="StoreId" />
+	</condition>
+	<!-- Set the default, which is store1 - if "theStoreId" hasn't been defined -->
+	<condition property="theStoreId" value="store1">
+		<not>
+			<isset property="StoreId" />
+		</not>
+	</condition>
+
+	<!-- Set the kkEngineMode - if EngineMode has been defined -->
+	<condition property="kkEngineMode" value="${EngineMode}">
+		<isset property="EngineMode" />
+	</condition>
+	<!-- Set the default, which is 0 (Single Store, Single DB) - if the EngineMode hasn't been defined -->
+	<condition property="kkEngineMode" value="0">
+		<not>
+			<isset property="EngineMode" />
+		</not>
+	</condition>
+
+	<!-- Set custShared - if CustomersShared has been defined -->
+	<condition property="custShared" value="${CustomersShared}">
+		<isset property="CustomersShared" />
+	</condition>
+	<!-- Set the default, which is false - if CustomersShared hasn't been defined -->
+	<condition property="custShared" value="false">
+		<not>
+			<isset property="CustomersShared" />
+		</not>
+	</condition>
+
+	<!-- Set prodShared - if ProductsShared has been defined -->
+	<condition property="prodShared" value="${ProductsShared}">
+		<isset property="ProductsShared" />
+	</condition>
+	<!-- Set the default, which is false - if ProductsShared hasn't been defined -->
+	<condition property="prodShared" value="false">
+		<not>
+			<isset property="ProductsShared" />
+		</not>
+	</condition>
+
+	<!-- Set catShared - if CategoriesShared has been defined -->
+	<condition property="catShared" value="${CategoriesShared}">
+		<isset property="CategoriesShared" />
+	</condition>
+	<!-- Set the default, which is false - if CategoriesShared hasn't been defined -->
+	<condition property="catShared" value="false">
+		<not>
+			<isset property="CategoriesShared" />
+		</not>
+	</condition>
+
+	<path id="kk.libs.path">
+		<fileset dir="../webapps/konakart/WEB-INF/lib/">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="kka.libs.path">
+		<fileset dir="../webapps/konakartadmin/WEB-INF/lib/">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="all.compile.path">
+		<path refid="kk.compile.path" />
+		<path refid="kka.compile.path" />
+		<path location="../custom/database/classes" />
+	</path>
+
+	<path id="kk.compile.path">
+		<path refid="kk.libs.path" />
+		<path location="../custom/database/classes" />
+		<path location="../custom/customStoreService/classes" />
+	</path>
+
+	<path id="kka.compile.path">
+		<path refid="kka.libs.path" />
+		<path location="../custom/database/classes" />
+		<path location="../custom/customStoreService/classes" />
+	</path>
+
+	<path id="kk.run.path">
+		<path location="./classes" />
+		<path location="./src" />
+		<path location="../custom/database/classes" />
+		<path location="../custom/adminengine/classes" />
+		<path location="../custom/customStoreService/classes" />
+		<path location="../webapps/konakart/WEB-INF/classes" />
+		<path refid="kk.libs.path" />
+	</path>
+
+	<path id="kka.run.path">
+		<path location="./classes" />
+		<path location="./src" />
+		<path location="../custom/database/classes" />
+		<path location="../custom/adminengine/classes" />
+		<path location="../custom/customStoreService/classes" />
+		<path location="../webapps/konakartadmin/WEB-INF/classes" />
+		<path refid="kka.libs.path" />
+	</path>
+
+	<target name="java.api.examples.debugenv" description="Debug the environment">
+		<echo message="basedir                               = ${basedir}" />
+		<echo message="userdir                               = ${user.dir}" />
+		<echo message="java.source                           = ${java.source}" />
+		<echo message="java.target                           = ${java.target}" />
+		<echo message="debug_javac                           = ${debug_javac}" />
+		<echo message="torque.build.src.present              = ${torque.build.src.present}" />
+		<echo message="SearchForProductsWithSnippets.present = ${SearchForProductsWithSnippets.present}" />
+		<echo message="CustomStoreServiceExample.present     = ${CustomStoreServiceExample.present}" />
+		<echo message="CustomStoreServiceJar.present         = ${CustomStoreServiceJar.present}" />
+		<echo message="CustomAdminServiceJar.present         = ${CustomAdminServiceJar.present}" />
+	</target>
+
+	<target name="clean" description="Clears away everything that's created during a build">
+		<echo message="Clean-up torque-generated custom source files..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="../custom/database/gensrc" />
+		</delete>
+		<echo message="Clean-up api example class files..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="./classes" />
+		</delete>
+	</target>
+
+	<target name="generate.custom.schema" description="Generate the Custom Schema if required" if="torque.build.src.present">
+		<echo message="Generate the Custom Schema if required..." />
+		<ant dir="../custom"
+		     antfile="build.xml"
+			 target="make_jar_customDB"
+		     output="create_torque_classes.log" />
+	</target>
+
+	<target name="generate.custom.store.service" description="Generate the Custom Store Service if possible" if="CustomStoreServiceExample.present">
+		<echo message="Generate the Custom Store Service if possible..." />
+		<antcall target="generate.custom.store.service2"/>
+	</target>
+
+	<target name="generate.custom.store.service2" description="Generate the Custom Store Service if necessary" unless="CustomStoreServiceJar.present">
+		<echo message="Generate the Custom Store Service if necessary..." />
+		<ant dir="../custom"
+		     antfile="build.xml"
+			 target="build.custom.store.service"
+		     output="build_custom_store_service.log" />
+	</target>
+
+	<target name="generate.custom.admin.service" description="Generate the Custom Admin Service if possible" if="CustomStoreServiceExample.present">
+		<echo message="Generate the Custom Admin Service if possible..." />
+		<antcall target="generate.custom.admin.service2"/>
+	</target>
+
+	<target name="generate.custom.admin.service2" description="Generate the Custom Admin Service if necessary" unless="CustomAdminServiceJar.present">
+		<echo message="Generate the Custom Admin Service if necessary..." />
+		<ant dir="../custom"
+		     antfile="build.xml"
+			 target="build.custom.admin.service"
+		     output="build_custom_admin_service.log" />
+	</target>
+
+	<target name="compile" description="Compile the examples">
+		<antcall target="kktimestamp">
+			<param name="message" value="Compile" />
+		</antcall>
+
+		<echo message="Compile the examples" />
+
+		<mkdir dir="./classes" />
+		<javac srcdir="./src/"
+		       destdir="./classes"
+		       debug="on"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java"
+			   excludes="**/CustomSchemaExample.java">
+			<classpath refid="all.compile.path" />
+		</javac>
+
+		<echo message="Compile the admin custom engine" />
+
+		<mkdir dir="../custom/adminengine/classes" />
+		<javac srcdir="../custom/adminengine/gensrc/"
+		       destdir="../custom/adminengine/classes"
+		       debug="on"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="kka.compile.path" />
+		</javac>
+
+		<echo message="Copy Properties for the examples" />
+		<copy todir="./classes/">
+			<fileset dir="./src">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="compile_custom_schema_example" description="Compile the custom schema example" if="torque.build.src.present">
+		<echo message="Compile the custom schema example" />
+
+		<mkdir dir="./classes" />
+		<javac srcdir="./src/"
+		       destdir="./classes"
+		       debug="on"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/CustomSchemaExample.java">
+			<classpath refid="kk.compile.path" />
+		</javac>
+
+		<echo message="Copy Properties for the examples" />
+		<copy todir="./classes/">
+			<fileset dir="./src">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="run" description="Run the InsertOrder example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run InsertOrder" />
+		</antcall>
+		
+		<java classname="com.konakart.apiexamples.InsertOrder" fork="true" failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runCustomSchemaExample" description="Run the CustomSchemaExample example program" if="torque.build.src.present">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run CustomSchemaExample" />
+		</antcall>
+		
+		<java classname="com.konakart.apiexamples.CustomSchemaExample" fork="true" failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runGetCustomer" description="Run the GetCustomer program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run GetCustomer" />
+		</antcall>
+		
+		<java classname="com.konakart.apiexamples.GetCustomer" fork="true" failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runSearchForProductsWithSnippets" description="Run the SearchForProductsWithSnippets program"
+	        if="SearchForProductsWithSnippets.present">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run SearchForProductsWithSnippets" />
+		</antcall>
+		
+		<java classname="com.konakart.apiexamples.SearchForProductsWithSnippets" fork="true" failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runCustomStoreServiceExample" description="Run the CustomStoreServiceExample program"
+	        if="CustomStoreServiceExample.present">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run CustomStoreServiceExample" />
+		</antcall>
+		
+		<java classname="com.konakart.apiexamples.CustomStoreServiceExample" fork="true" failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runCustomAdminServiceExample" description="Run the CustomAdminServiceExample program"
+	        if="CustomAdminServiceExample.present">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run CustomAdminServiceExample" />
+		</antcall>
+		
+		<java classname="com.konakartadmin.apiexamples.CustomAdminServiceExample" fork="true" failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kka.run.path" />
+		</java>
+	</target>
+
+	<target name="runCustomExamples" description="Run the CustomExamples example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run CustomExamples" />
+		</antcall>
+		
+		<java classname="com.konakartadmin.apiexamples.CustomExamples"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runGetCustomerExamples" description="Run the GetCustomerExamples example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run GetCustomerExamples" />
+		</antcall>
+		
+		<java classname="com.konakartadmin.apiexamples.GetCustomerExamples"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kka.run.path" />
+		</java>
+	</target>
+	
+	<target name="runCustomFacetSearchExample" description="Run the CustomFacetSearchUsingSolr example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run CustomFacetSearchUsingSolr" />
+		</antcall>
+	
+		<java classname="com.konakartadmin.apiexamples.CustomFacetSearchUsingSolr"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runInsertProductWithExternalPrices" description="Run the InsertProductWithExternalPrices example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run InsertProductWithExternalPrices" />
+		</antcall>
+
+		<java classname="com.konakartadmin.apiexamples.InsertProductWithExternalPrices"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kka.run.path" />
+		</java>
+	</target>
+
+	<target name="runInsertProduct" description="Run the InsertProduct example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run InsertProduct" />
+		</antcall>
+
+		<java classname="com.konakartadmin.apiexamples.InsertProduct"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<jvmarg value="-Djava.awt.headless=true" />
+			<classpath refid="kka.run.path" />
+		</java>
+	</target>
+	
+	<target name="runUpdateProductDescriptions" description="Run the UpdateProductDescriptions example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run UpdateProductDescriptions" />
+		</antcall>
+
+		<java classname="com.konakartadmin.apiexamples.UpdateProductDescriptions"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kka.run.path" />
+		</java>
+	</target>
+
+	<target name="runGetProdByTags" description="Run the SearchForProductsByTags example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run SearchForProductsByTags" />
+		</antcall>
+
+		<java classname="com.konakart.apiexamples.SearchForProductsByTags"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runGetProduct" description="Run the GetProduct example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run GetProduct" />
+		</antcall>
+		
+		<java classname="com.konakart.apiexamples.GetProduct"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runMqPostOrderOnQueue" description="Run the MqPostOrderOnQueue example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run MqPostOrderOnQueue" />
+		</antcall>
+
+		<java classname="com.konakart.apiexamples.MqPostOrderOnQueue"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+	<target name="runMqReadOrdersFromQueue" description="Run the MqReadOrdersFromQueue example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run MqReadOrdersFromQueue" />
+		</antcall>
+
+		<java classname="com.konakart.apiexamples.MqReadOrdersFromQueue"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+	
+	<target name="runReserveStock" description="Run the Reserve Stock program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run ReserveStock" />
+		</antcall>
+
+		<java classname="com.konakart.apiexamples.ReserveStock" fork="true" failonerror="true">
+			<arg value="-m" />
+			<arg value="${kkEngineMode}" />
+			<arg value="-s" />
+			<arg value="${theStoreId}" />
+			<arg value="-c" />
+			<arg value="${custShared}" />
+			<arg value="-ps" />
+			<arg value="${prodShared}" />
+			<arg value="-cs" />
+			<arg value="${catShared}" />
+			<arg value="-d" />
+			<classpath refid="kk.run.path" />
+		</java>
+	</target>
+
+
+	<target name="build"
+	        description="Compiles and runs some examples"
+	        depends="
+			java.api.examples.debugenv,
+			clean,
+			generate.custom.schema,
+			generate.custom.store.service,
+			generate.custom.admin.service,
+            compile,
+			compile_custom_schema_example,
+			run,
+			runGetCustomer,
+			runSearchForProductsWithSnippets,
+			runGetProdByTags,
+			runCustomStoreServiceExample,
+			runCustomAdminServiceExample,
+			runInsertProduct
+		    " />
+
+</project>

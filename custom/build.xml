@@ -1,0 +1,4530 @@
+<project name="konakart_custom_code_builds" default="build" basedir=".">
+
+	<!-- === PROPERTIES === -->
+	<property environment="env" />
+
+	<!-- build.local.properties will override the build.properties file if present -->
+	<property file="build.local.properties" />
+	<property file="build.properties" />
+
+	<presetdef name="javac">
+	    <javac includeantruntime="false" />
+	</presetdef>
+
+	<import file="./ant/sharedPatternSets.xml"/>
+
+	<macrodef name="unCommentInXml">
+		<attribute name="file" />
+		<attribute name="sectionName" />
+		<sequential>
+			<echo message="Uncomment @{sectionName} in @{file}" />
+			<replace file="@{file}" token='- @{sectionName}'                      value='- @{sectionName} --&gt;' />
+			<replace file="@{file}" token='- @{sectionName} --&gt; --&gt;'        value='- @{sectionName} --&gt;' />
+			<replace file="@{file}" token='End of @{sectionName}'                 value='&lt;!-- End of @{sectionName}' />
+			<replace file="@{file}" token='&lt;!-- &lt;!-- End of @{sectionName}' value='&lt;!-- End of @{sectionName}' />
+		</sequential>
+	</macrodef>
+
+	<target name="kktimestamp">
+		<tstamp>
+			<format property="current.time" pattern="MM/dd/yyyy HH:mm:ss" />
+		</tstamp>
+
+		<echo message="${message} ${current.time}" />      
+	</target>
+	
+	<!-- Set java.source if it hasn't already been defined -->
+	<condition property="java.source" value="1.7">
+		<not>
+			<isset property="java.source" />
+		</not>
+	</condition>
+
+	<!-- Set java.target if it hasn't already been defined -->
+	<condition property="java.target" value="1.7">
+		<not>
+			<isset property="java.target" />
+		</not>
+	</condition>
+	
+	<!-- Set the JAVAC_DEBUG - if JAVAC_DEBUG has been defined -->
+	<condition property="debug_javac" value="${env.JAVAC_DEBUG}">
+		<isset property="env.JAVAC_DEBUG" />
+	</condition>
+	<!-- Set the default, which is on - if JAVAC_DEBUG hasn't been defined -->
+	<condition property="debug_javac" value="on">
+		<not>
+			<isset property="env.JAVAC_DEBUG" />
+		</not>
+	</condition>
+	
+	<dirname property="custom.home" file="${ant.file}" />
+	<property name="liferaysso.home" value="${custom.home}/konakart_portlet/liferay_sso/" />
+
+	<available file="${custom.home}/database/build-torque.xml" property="torque.build.present" />
+
+	<!-- To figure out which files are available in this environment -->
+	
+	<available file="${custom.home}/adminappn/src/com/konakartadmin/bl/AdminOrderIntegrationMgr.java"      property="adminappn.code.present" />
+	<available file="${custom.home}/adminappnEE/src/com/konakartadmin/bl/AdminLDAPMgr.java"                property="adminappnEE.code.present" />
+	<available file="${custom.home}/adminengine/examples/com/konakartadmin/app/Custom.java"                property="adminengine.code.present" />
+	<available file="${custom.home}/appn/src/com/konakart/bl/OrderIntegrationMgr.java"                     property="appn.code.present" />
+	<available file="${custom.home}/appnEE/src/com/konakart/bl/LDAPMgr.java"                               property="appnEE.code.present" />
+	<available file="${custom.home}/engine/examples/com/konakart/app/Custom.java"                          property="engine.code.present" />
+	<available file="${custom.home}/utils/src/com/konakart/util/TaxUtils.java"                             property="utils.code.present" />
+	<available file="${custom.home}/../webapps/konakart/WEB-INF/lib/konakart_enterprise-${konakart.version}.jar"  property="kk.enterprise.present" />
+	<available file="${custom.home}/appEngEE/src/com/konakart/al/KKAppEng.java"                            property="appEngEE.code.present" />
+	<available file="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminService.java" property="customAdminService.code.present" />
+	<available file="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreService.java"      property="customStoreService.code.present" />
+	<available file="${custom.home}/konakartadmin_app/src/com/konakartadmin/al/SessionObj.java"            property="konakartadmin_app.code.present" />
+	<available file="${custom.home}/../webapps/konakart/WEB-INF/server-config.wsdd"                        property="konakart.server.config.present" />
+	<available file="${custom.home}/../webapps/konakartadmin/WEB-INF/server-config.wsdd"                   property="konakartadmin.server.config.present" />
+	<available file="${liferaysso.home}/6/src/com/konakart/liferay/SingleSignOn.java"                      property="liferaysso.6.code.present" />
+	<available file="${liferaysso.home}/7/src/com/konakart/liferay/SingleSignOn.java"                      property="liferaysso.7.code.present" />
+	
+	<exec executable="hostname" outputproperty="host.name" />
+
+	<!-- Set default Port -->
+	<condition property="defaultPort" value="8780">
+		<not>
+			<isset property="defaultPort" />
+		</not>
+	</condition>
+	
+	<!-- Set forLR605 - if LR605 is defined -->
+	<condition property="forLR605" value="true">
+		<isset property="LR605" />
+	</condition>
+	
+	<!-- Set forLR606 - if LR606 is defined -->
+	<condition property="forLR606" value="true">
+		<isset property="LR606" />
+	</condition>
+	
+	<!-- Set forLR610 - if LR610 is defined -->
+	<condition property="forLR610" value="true">
+		<isset property="LR610" />
+	</condition>
+	
+	<!-- Set forLR611 - if LR611 is defined -->
+	<condition property="forLR611" value="true">
+		<isset property="LR611" />
+	</condition>
+	
+	<!-- Set forLR6120 - if LR6120 is defined -->
+	<condition property="forLR6120" value="true">
+		<isset property="LR6120" />
+	</condition>
+	
+	<!-- Set forLR612 - if LR612 is defined -->
+	<condition property="forLR6120" value="true">
+		<isset property="LR612" />
+	</condition>
+	
+	<!-- Set forLR62 - if LR620 is defined -->
+	<condition property="forLR62" value="true">
+		<isset property="LR620" />
+	</condition>
+	
+	<!-- Set forLR62 - if LR620 is defined -->
+	<condition property="forLR62" value="true">
+		<isset property="LR62" />
+	</condition>
+	
+	<!-- Set forLR62 - if LR6210 is defined -->
+	<condition property="forLR62" value="true">
+		<isset property="LR6210" />
+	</condition>
+	
+	<!-- Set forLR7 - if LR7 is defined -->
+	<condition property="forLR7" value="true">
+		<or>
+			<isset property="LR7" />
+			<isset property="LR70" />
+			<isset property="LR7.0" />
+		</or>
+	</condition>
+	
+	<!-- Set the Liferay Directory name -->
+	
+	<!-- Set LRDIR - to 6.0 -->
+	<condition property="LRDIR" value="6.0">
+		<or>
+			<isset property="LR605" />
+			<isset property="LR606" />
+		</or>
+	</condition>
+	
+	<!-- Set LRDIR - to 6.1 -->
+	<condition property="LRDIR" value="6.1">
+		<or>
+			<isset property="LR610" />
+			<isset property="LR611" />
+			<isset property="LR6120" />
+			<isset property="LR612" />
+		</or>
+	</condition>
+	
+	<!-- Set LRDIR - to 6.2 -->
+	<condition property="LRDIR" value="6.2">
+		<or>
+			<isset property="LR620" />
+			<isset property="LR62" />
+			<isset property="LR6210" />
+		</or>
+	</condition>
+	
+	<!-- Set LRDIR - to 7.0 -->
+	<condition property="LRDIR" value="7.0">
+		<or>
+			<isset property="LR7" />
+			<isset property="LR70" />
+			<isset property="LR7.0" />
+		</or>
+	</condition>
+	
+	<!-- Set LRDIR - to 8.0 -->
+	<condition property="LRDIR" value="8.0">
+		<or>
+			<isset property="LR8" />
+			<isset property="LR80" />
+			<isset property="LR8.0" />
+		</or>
+	</condition>
+	
+	<!-- Set forWeblogic - if weblogic is defined -->
+	<condition property="forWeblogic" value="true">
+		<isset property="weblogic" />
+	</condition>
+
+	<!-- Set forJBoss - if jboss is defined -->
+	<condition property="forJBoss" value="true">
+		<isset property="jboss" />
+	</condition>
+
+	<!-- Set forWildfly - if wildfly is defined -->
+	<condition property="forWildfly" value="true">
+		<isset property="wildfly" />
+	</condition>
+
+	<!-- Set forGlassfish - if glassfish is defined -->
+	<condition property="forGlassfish" value="true">
+		<isset property="glassfish" />
+	</condition>
+	
+	<!-- Set forJBossLiferay - if jbossliferay is defined -->
+	<condition property="forJBossLiferay" value="true">
+		<isset property="jbossliferay" />
+	</condition>
+	
+	<!-- Set forJBossLiferay606 - if jbossliferay606 is defined -->
+	<condition property="forJBossLiferay606" value="true">
+		<isset property="jbossliferay606" />
+	</condition>
+	
+	<!-- Set forJBossLiferay610 - if jbossliferay610 is defined -->
+	<condition property="forJBossLiferay610" value="true">
+		<isset property="jbossliferay610" />
+	</condition>
+	
+	<!-- Set forJBossLiferay611 - if jbossliferay611 is defined -->
+	<condition property="forJBossLiferay611" value="true">
+		<isset property="jbossliferay611" />
+	</condition>
+	
+	<!-- Set forJBossLiferay6120 - if jbossliferay6120 is defined -->
+	<condition property="forJBossLiferay6120" value="true">
+		<isset property="jbossliferay6120" />
+	</condition>
+	
+	<!-- Set forJBossLiferay62 - if jbossliferay620 is defined -->
+	<condition property="forJBossLiferay62" value="true">
+		<isset property="jbossliferay620" />
+	</condition>
+	
+	<!-- Set forJBossLiferay62 - if jbossliferay6210 is defined -->
+	<condition property="forJBossLiferay62" value="true">
+		<isset property="jbossliferay6210" />
+	</condition>
+	
+	<!-- Set forWildflyLiferay - if wildflyliferay is defined -->
+	<condition property="forWildflyLiferay" value="true">
+		<isset property="wildflyliferay" />
+	</condition>
+
+	<!-- Set KKPortalVersion6 -->
+	<condition property="KKPortalVersion6" value="true">
+		<or>
+			<isset property="LR610" />
+			<isset property="LR611" />
+			<isset property="LR6120" />
+			<isset property="LR612" />
+			<isset property="LR620" />
+			<isset property="LR62" />
+			<isset property="LR6210" />
+		</or>
+	</condition>
+	
+	<!-- Set KKPortalVersion7 -->
+	<condition property="KKPortalVersion7" value="true">
+		<or>
+			<isset property="LR7" />
+			<isset property="LR70" />
+		</or>
+	</condition>
+	
+	<!-- Set KKPortalVersion7 as the default - if not defined to something else -->
+	<condition property="KKPortalVersion7" value="true">
+		<not>
+			<isset property="KKPortalVersion6" />
+		</not>
+	</condition>
+	
+	<!-- Set KKPortalVersion8 -->
+	<condition property="KKPortalVersion8" value="true">
+		<or>
+			<isset property="LR8" />
+			<isset property="LR80" />
+		</or>
+	</condition>
+	
+	<!-- Set the KKPortalVersion -->
+	<condition property="KKPortalVersion" value="8">
+		<isset property="KKPortalVersion8" />
+	</condition>
+	
+	<!-- Set the KKPortalVersion -->
+	<condition property="KKPortalVersion" value="7">
+		<isset property="KKPortalVersion7" />
+	</condition>
+	
+	<!-- Set the KKPortalVersion -->
+	<condition property="KKPortalVersion" value="6">
+		<isset property="KKPortalVersion6" />
+	</condition>
+	
+	<!-- Set excludeAXIS - if noAXIS is defined -->
+	<condition property="excludeAXIS" value="true">
+		<isset property="noAXIS" />
+	</condition>
+
+	<!-- Set forKKDemoSite if building storefront portlet to point at the KK Demo Site -->
+	<condition property="forKKDemoSite" value="true">
+		<isset property="KKDemoSite" />
+	</condition>
+	
+	<path id="konakart.portlet.build.utils">
+		<pathelement location="${custom.home}/lib/kk_portlet_build-${konakart.version}.jar" />
+	</path>
+
+	<!-- Set konakart.dir if it hasn't already been defined -->
+	<condition property="konakart.dir" value="${custom.home}/../webapps/konakart/">
+		<not>
+			<isset property="konakart.dir" />
+		</not>
+	</condition>
+
+	<!-- Set konakart.libs.dir if it hasn't already been defined -->
+	<condition property="konakart.libs.dir" value="../webapps/konakart/WEB-INF/lib/">
+		<not>
+			<isset property="konakart.libs.dir" />
+		</not>
+	</condition>
+
+	<!-- Set konakartadmin.dir if it hasn't already been defined -->
+	<condition property="konakartadmin.dir" value="${custom.home}/../webapps/konakartadmin/">
+		<not>
+			<isset property="konakartadmin.dir" />
+		</not>
+	</condition>
+
+	<!-- Set konakartadmin.libs.dir if it hasn't already been defined -->
+	<condition property="konakartadmin.libs.dir" value="../webapps/konakartadmin/WEB-INF/lib/">
+		<not>
+			<isset property="konakartadmin.libs.dir" />
+		</not>
+	</condition>
+
+	<!-- Set konakartadmin.classes.dir if it hasn't already been defined -->
+	<condition property="konakartadmin.classes.dir" value="../webapps/konakartadmin/WEB-INF/classes/">
+		<not>
+			<isset property="konakartadmin.classes.dir" />
+		</not>
+	</condition>
+
+	<!-- Set konakartadmin_app.dir if it hasn't already been defined -->
+	<condition property="konakartadmin_app.dir" value="../webapps/konakartadmin_app/">
+		<not>
+			<isset property="konakartadmin_app.dir" />
+		</not>
+	</condition>
+
+	<!-- Set konakartadmin_app.libs.dir if it hasn't already been defined -->
+	<condition property="konakartadmin_app.libs.dir" value="../webapps/konakartadmin_app/WEB-INF/lib/">
+		<not>
+			<isset property="konakartadmin_app.libs.dir" />
+		</not>
+	</condition>
+
+	<condition property="libs.dir" value="${custom.home}/../lib">
+		<not>
+			<isset property="libs.dir" />
+		</not>
+	</condition>
+
+	<condition property="axis.libs.dir" value="${custom.home}/../lib">
+		<not>
+			<isset property="axis.libs.dir" />
+		</not>
+	</condition>
+
+	<!-- Set DSUK_BUILD if DSUKBuild is true -->
+	<condition property="DSUK_BUILD">
+		<istrue value="${DSUKBuild}" />
+	</condition>
+	
+	<tstamp>
+		<format property="KK_DATETIMESTAMP" pattern="h:mmaa d-MMM-yyyy z" />
+	</tstamp>
+
+	<path id="axis.path">
+		<fileset dir="${axis.libs.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="kkadminlibs.path">
+		<fileset dir="${konakartadmin.libs.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="kkadmin.run.path">
+		<pathelement location="${konakartadmin.classes.dir}" />
+		<path refid="kkadminlibs.path" />
+	</path>
+
+	<path id="kklibs.path">
+		<fileset dir="${konakart.libs.dir}">
+			<include name="**/*.jar" />
+			<exclude name="**/konakart_ordertotal*.jar" />
+			<exclude name="**/konakart_payment*.jar" />
+			<exclude name="**/konakart_others*.jar" />
+			<exclude name="**/konakart_shipping*.jar" />
+		</fileset>
+		<fileset dir="${axis.libs.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${libs.dir}">
+			<include name="**/*.jar" />
+			<exclude name="**/gwt-dev-2.8.0.jar" />
+			<exclude name="**/gwt-servlet-*.jar" />
+			<exclude name="**/gwt-user-*.jar" />
+		</fileset>
+	</path>
+
+	<path id="kkadmin_app.libs.path">
+		<fileset dir="${konakartadmin_app.libs.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="customStoreService.libs.path">
+		<fileset dir="./customStoreService/lib">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="customAdminService.libs.path">
+		<fileset dir="./customAdminService/lib">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="kkadmin.portal.libs.6.path">
+		<fileset dir="./konakartadmin_portlet/">
+			<include name="**/6/WEB-INF/lib//*.jar" />
+			<exclude name="stage/**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="kkadmin.portal.libs.7.path">
+		<fileset dir="./konakartadmin_portlet/">
+			<include name="**/7/WEB-INF/lib/*.jar" />
+			<exclude name="stage/**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="compile.path.common">
+		<pathelement location="./adminappn/classes" />
+		<pathelement location="./adminappnEE/classes" />
+		<pathelement location="./konakartadmin_portlet/liferay/${KKPortalVersion}/classes" />
+	</path>
+
+	<path id="compile.path">
+		<pathelement location="./appn/classes" />
+		<pathelement location="./appnEE/classes" />
+		<pathelement location="./utils/classes" />
+		<pathelement location="./appnTemp/classes" />
+		<path refid="kklibs.path" />
+		<path refid="compile.path.common" />
+	</path>
+
+	<path id="custom.admin.compile.path">
+		<pathelement location="./customAdminService/classes" />
+		<pathelement location="./database/classes" />
+		<path refid="customAdminService.libs.path" />
+		<path refid="konakartadmin.compile.path" />
+	</path>
+
+	<path id="custom.store.compile.path">
+		<pathelement location="./customStoreService/classes" />
+		<pathelement location="./database/classes" />
+		<path refid="customStoreService.libs.path" />
+		<path refid="compile.path" />
+	</path>
+
+	<path id="konakartadmin.compile.path">
+		<path refid="compile.path" />
+		<path refid="kkadminlibs.path" />
+	</path>
+
+	<path id="konakartadmin_app.compile.path">
+		<pathelement location="./konakartadmin_app/build/classes" />
+		<path refid="kkadmin_app.libs.path" />
+		<path refid="kklibs.path" />
+	</path>
+
+	<path id="compile.admin.portal.6.path">
+		<path refid="compile.path.common" />
+		<path refid="kkadmin.portal.libs.6.path" />
+		<path refid="kkadminlibs.path" />
+	</path>
+
+	<path id="compile.admin.portal.7.path">
+		<path refid="compile.path.common" />
+		<path refid="kkadmin.portal.libs.7.path" />
+		<path refid="kkadminlibs.path" />
+	</path>
+
+	<path id="build.soap.utils.path">
+		<fileset dir="./lib">
+			<include name="kk_custom_store_service*.jar" />
+		</fileset>
+		<path refid="kklibs.path" />
+	</path>
+
+	<path id="kk_build_utils.path">
+		<fileset dir="./lib">
+			<include name="kk_build_utils*.jar" />
+		</fileset>
+	</path>
+
+	<path id="build.customStoreService.path">
+		<fileset dir="./lib">
+			<include name="kk_custom_store_service*.jar" />
+			<include name="javaparser*.jar" />
+		</fileset>
+		<path refid="kklibs.path" />
+	</path>
+
+	<path id="build.customAdminService.path">
+		<fileset dir="./lib">
+			<include name="kk_custom_store_service*.jar" />
+			<include name="javaparser*.jar" />
+		</fileset>
+		<path refid="kklibs.path" />
+	</path>
+	
+	<path id="customAdminService.axis.gen.path">
+		<pathelement location="./customAdminService/classes" />
+		<path refid="customAdminService.libs.path" />
+		<path refid="kklibs.path" />
+	</path>
+	
+	<path id="customStoreService.axis.gen.path">
+		<pathelement location="./customStoreService/classes" />
+		<path refid="customStoreService.libs.path" />
+		<path refid="kklibs.path" />
+	</path>
+
+	<path id="liferaysso.compile.path">
+		<pathelement location="${liferaysso.home}/${KKPortalVersion}/classes" />
+		<fileset dir="${liferaysso.home}/${KKPortalVersion}/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+		<path refid="kklibs.path" />
+	</path>
+
+	<target name="debugenv" description="Debug the environment">
+		<antcall target="kktimestamp">
+			<param name="message" value="Custom Build" />
+		</antcall>
+		<echo message="custom.home                         = ${custom.home}" />
+		<echo message="basedir                             = ${basedir}" />
+		<echo message="userdir                             = ${user.dir}" />
+		<echo message="liferaysso.home                     = ${liferaysso.home}" />
+		<echo message="KKPortalVersion                     = ${KKPortalVersion}" />
+		<echo message="Liferay Directory                   = ${LRDIR}" />
+		<echo message="konakart.version                    = ${konakart.version}" />
+		<echo message="java.source                         = ${java.source}" />
+		<echo message="java.target                         = ${java.target}" />
+		<echo message="JAVA_HOME                           = ${env.JAVA_HOME}" />
+		<echo message="ANT Java version                    = ${ant.java.version}" />
+		<echo message="Java version                        = ${java.version}" />
+		<echo message="debug_javac                         = ${debug_javac}" />
+		<echo message="torque.build.present                = ${torque.build.present}" />
+		<echo message="adminappn.code.present              = ${adminappn.code.present}" />
+		<echo message="adminappnEE.code.present            = ${adminappnEE.code.present}" />
+		<echo message="adminengine.code.present            = ${adminengine.code.present}" />
+		<echo message="customAdminService.code.present     = ${customAdminService.code.present}" />
+		<echo message="customStoreService.code.present     = ${customStoreService.code.present}" />
+		<echo message="konakartadmin_app.code.present      = ${konakartadmin_app.code.present}" />
+		<echo message="konakartadmin.server.config.present = ${konakartadmin.server.config.present}" />
+		<echo message="konakart.server.config.present      = ${konakart.server.config.present}" />
+		<echo message="appn.code.present                   = ${appn.code.present}" />
+		<echo message="appnEE.code.present                 = ${appnEE.code.present}" />
+		<echo message="engine.code.present                 = ${engine.code.present}" />
+		<echo message="utils.code.present                  = ${utils.code.present}" />
+		<echo message="excludeAXIS                         = ${excludeAXIS}" />
+		<echo message="noClean                             = ${noClean}" />
+		
+		<echo message="System Time from Java" />
+		<java classname="com.dsdata.util.SystemTime" >
+			<classpath refid="kk_build_utils.path" />
+		</java>
+	</target>
+	
+	<target name="clean"
+	        depends="clean_torque_classes, clean_custom_admin_service_classes, 
+			         clean_custom_store_service_classes, clean_custom_store_service_classes_json, clean_wars"
+	        description="Clears away everything that's created during a build"
+			unless="noClean">
+
+		<echo message="Cleanup..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/appn/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/appnTemp/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/adminappn/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/appnEE/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/adminappnEE/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/modules/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/engine/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/utils/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/adminengine/classes" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/jar" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/konakartadmin_app/build/classes" />
+		</delete>
+	</target>
+
+	<target name="clean_torque_classes"
+	        description="Clears away the generated torque artifacts" 
+			if="torque.build.present"
+			unless="noClean">
+
+		<echo message="Cleanup torque classes..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/database/docs" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/database/src/java" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/database/src/sql" />
+		</delete>
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/database/classes/com/konakart/om" />
+		</delete>
+		<delete file="${custom.home}/database/custom-schema-gen.log" />
+	</target>
+
+	<target name="clean_custom_store_service_classes"
+	        description="Clears away the generated custom store service artifacts" 
+			if="customStoreService.code.present">
+
+		<echo message="Cleanup custom store service classes..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/customStoreService/classes" />
+			<fileset dir="${custom.home}/customStoreService/gensrc" />
+			<fileset dir="${custom.home}/customStoreService/log" />
+			<fileset dir="${custom.home}/customStoreService/temp" />
+			<fileset dir="${custom.home}/customStoreService/wsdl" />
+		</delete>
+	</target>
+
+	<target name="clean_custom_store_service_classes_json"
+	        description="Clears away the generated custom store service artifacts - JSON" 
+			if="customStoreService.code.present">
+
+		<echo message="Cleanup custom store service classes - JSON..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/customStoreService/classes">
+				<include name="**/*JSON*" />
+			</fileset>
+			<fileset dir="${custom.home}/customStoreService/gensrc" >
+				<include name="**/*JSON*" />
+			</fileset>
+			<fileset dir="${custom.home}/customStoreService/log" >
+				<include name="*JSON*" />
+			</fileset>
+			<fileset dir="${custom.home}/customStoreService/temp" >
+				<include name="*JSON*" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="clean_custom_admin_service_classes"
+	        description="Clears away the generated custom admin service artifacts" 
+			if="customAdminService.code.present">
+
+		<echo message="Cleanup custom admin service classes..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/customAdminService/classes" />
+			<fileset dir="${custom.home}/customAdminService/gensrc" />
+			<fileset dir="${custom.home}/customAdminService/log" />
+			<fileset dir="${custom.home}/customAdminService/temp" />
+			<fileset dir="${custom.home}/customAdminService/wsdl" />
+		</delete>
+	</target>
+
+	<target name="clean_custom_admin_service_classes_json"
+	        description="Clears away the generated custom admin service artifacts - JSON" 
+			if="customAdminService.code.present">
+
+		<echo message="Cleanup custom admin service classes - JSON..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/customAdminService/classes">
+				<include name="**/*JSON*" />
+			</fileset>
+			<fileset dir="${custom.home}/customAdminService/gensrc" >
+				<include name="**/*JSON*" />
+			</fileset>
+			<fileset dir="${custom.home}/customAdminService/log" >
+				<include name="*JSON*" />
+			</fileset>
+			<fileset dir="${custom.home}/customAdminService/temp" >
+				<include name="*JSON*" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="clean_wars" description="Clears away all the WARs and EARs" 
+			depends="clean_portlet_war, clean_admin_portlet_war">
+		<echo message="Cleanup WARs..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/war" />
+		</delete>
+		<echo message="Cleanup EARs..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/ear" />
+			<fileset dir="${custom.home}/konakart.ear" />
+		</delete>
+	</target>
+
+	<target name="clean_portlet_war" description="Clears away the portlet war">
+		<echo message="Cleanup portlet WARs..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/portlet_war" />
+		</delete>
+
+		<echo message="Cleanup portlet classes..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferay/*/classes" />
+		</delete>
+
+		<echo message="Cleanup portlet WAR staging area..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/konakart_portlet/stage" />
+		</delete>
+	</target>
+
+	<target name="clean_admin_portlet_war" description="Clears away the admin portlet war">
+		<echo message="Cleanup admin portlet WARs..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/admin_portlet_war" />
+		</delete>
+
+		<echo message="Cleanup admin portlet WAR staging area..." />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage" />
+		</delete>
+	</target>
+	
+	<target name="clean_manifest_file" description="Clean the MANIFEST file for all jars">
+		<echo message="Clean the MANIFEST file for all jars" />		
+		<delete includeEmptyDirs="false" failonerror="false">
+			<fileset dir="${custom.home}">
+				<include name="MANIFEST.MF" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="make_manifest_file" description="Create the MANIFEST file for all jars" unless="DSUK_BUILD">	
+		<echo message="Create the MANIFEST.MF file for all jars" />
+		<manifest file="${custom.home}/MANIFEST.MF">
+			<section name="KonaKart">
+				<attribute name="Implementation-Vendor" value="DS Data Systems (UK) Ltd."/>
+				<attribute name="Implementation-Title" value="KonaKart"/>
+				<attribute name="Implementation-Version" value="8.8.1.0"/>
+				<attribute name="Build-Date" value="${KK_DATETIMESTAMP}"/>
+				<attribute name="Build-Host" value="${host.name}"/>
+			</section>
+		</manifest>
+	</target>
+
+	<target name="generate_customAdminService" 
+	 description="Builds the Custom Admin Service code" 
+		 depends="clean_custom_admin_service_classes, make_jar_customDB"
+		      if="customAdminService.code.present">
+
+		<echo message="Builds the Custom Admin Service code" />
+		<mkdir dir="${custom.home}/customAdminService/classes" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws" />
+		<mkdir dir="${custom.home}/customAdminService/lib" />
+		<mkdir dir="${custom.home}/customAdminService/log" />
+		<mkdir dir="${custom.home}/customAdminService/temp" />
+		<mkdir dir="${custom.home}/customAdminService/wsdl" />
+		<mkdir dir="${custom.home}/jar" />
+		
+		<echo message="Find methods in KKCustomAdminServiceIf.java" />
+		<java classname="com.dsdata.util.FindMethods"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/FindMethods-KKCustomAdminServiceIf.log"
+		      timeout="20000">
+			<arg value="-i" />
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminServiceIf.java" />
+			<arg value="-o" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/methods.txt" />
+			<arg value="-p" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/params.txt" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+		
+		<echo message="Create KKWSCustomAdminServiceIf.java from the KKCustomAdminServiceIf.java file" />
+		<!-- 
+		    We create the WS interface definition file form the KKCustomAdminServiceIf file so that we only 
+		    have to define one and keep these two compatible.   The WS interface has some 
+		    restrictions so we make those changes after the copy. 
+		-->
+		
+		<copy file="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminServiceIf.java"
+		      tofile="${custom.home}/customAdminService/temp/KKWSCustomAdminServiceIf.java"
+		      overwrite="true" />
+		
+		<!-- Change the interface name inside the file because we've just renamed it -->
+		
+		<replace file="${custom.home}/customAdminService/temp/KKWSCustomAdminServiceIf.java"
+		         token="interface KKCustomAdminServiceIf"
+		         value="interface KKWSCustomAdminServiceIf" />
+
+		<!-- Remove the thrown exceptions -->
+		<replace file="${custom.home}/customAdminService/temp/KKWSCustomAdminServiceIf.java"
+		         token="throws KKAdminException;"
+		         value=";" />
+	
+		<!-- Rename the package -->
+		<replace file="${custom.home}/customAdminService/temp/KKWSCustomAdminServiceIf.java"
+		         token="package com.konakartadmin.bl;"
+		         value="package com.konakartadmin.ws;" />
+	
+  		<copy file="${custom.home}/customAdminService/temp/KKWSCustomAdminServiceIf.java"
+		      tofile="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceIf.java"
+		      overwrite="true" />
+
+		<echo message="Create KKWSCustomAdminService.java from the KKCustomAdminServiceIf.java file" />
+		<!--
+			Create the web services implementation of the KKWSCustomAdminServiceIf interface.   
+			We generate this from the KKWSCustomAdminServiceIf automatically so that maintenance is reduced.
+		-->
+		<copy file="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceIf.java"
+		      tofile="${custom.home}/customAdminService/temp/KKWSCustomAdminService.java"
+		      overwrite="true" />
+		
+		<!--
+			Change the class name that's implemented.
+			The WS version must implement the same interface as the non-WS one
+		-->
+		<replace file="${custom.home}/customAdminService/temp/KKWSCustomAdminService.java"
+		         token="public interface KKWSCustomAdminServiceIf"
+		         value="public class KKWSCustomAdminService extends KKWSCustomAdminServiceBase implements KKCustomAdminServiceIf" />
+		
+		<!--
+			Make the necessary changes with a java util
+		-->
+		<java classname="com.dsdata.util.custom.CreateKKWSCustomAdminService"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKWSCustomAdminService.log"
+		      timeout="10000">
+			<arg value="${custom.home}/customAdminService/temp/KKWSCustomAdminService.java" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminService.java" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+		
+		<!--
+		<echo message="Compile Custom Store Service Database sources to produce classes for WSDL generation" />
+		<javac srcdir="${custom.home}/database"
+		       destdir="${custom.home}/database/classes"
+		       debug="${debug_javac}"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       memoryMaximumSize="256m"
+		       includes="gensrc/**/*.java">
+			<classpath refid="custom.store.compile.path" />
+		</javac>
+		-->
+		
+		<echo message="Compile Custom Admin Service Interface definitions to produce classes for WSDL generation" />
+		<javac srcdir="${custom.home}/customAdminService"
+		       destdir="${custom.home}/customAdminService/classes"
+		       debug="${debug_javac}"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       memoryMaximumSize="256m"
+		       includes="src/**/app/*.java, gensrc/**/ws/KKWSCustomAdminServiceIf.java">
+			<classpath refid="custom.admin.compile.path" />
+		</javac>
+		
+		<echo message="Remove KKWSCustomAdminServiceSoapBindingImpl.java if it exists" />
+		<delete includeEmptyDirs="false" failonerror="false">
+			<fileset dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/">
+				<include name="KKWSCustomAdminServiceSoapBindingImpl.java" />
+			</fileset>
+		</delete>
+		
+		<echo message="Create the Custom Admin Service WSDL from the Java" />
+		
+		<java classname="org.apache.axis.wsdl.Java2WSDL"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/Java2WSDL.log"
+		      timeout="60000">
+			<arg value="-o" />
+			<arg value="${custom.home}/customAdminService/wsdl/customAdminServiceOriginal.wsdl" />
+			<arg value="-T" />
+			<arg value="1.2" />
+			<arg value="-u" />
+			<arg value="ENCODED" />
+			<arg value="-y" />
+			<arg value="RPC" />
+			<arg value="-l" />
+			<arg value="http://localhost:${defaultPort}/axis/services/KKWSCustomAdminService" />
+			<arg value="-N" />
+			<arg value="http://ws.konakartadmin.com" />
+			<arg value="-n" />
+			<arg value="http://ws.konakartadmin.com" />
+			<arg value="com.konakartadmin.ws.KKWSCustomAdminServiceIf" />
+			<classpath refid="customAdminService.axis.gen.path" />
+		</java>
+
+		<echo message="Annotate CustomAdminService WSDL" />
+		<java classname="com.dsdata.util.AnnotateWsdl"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="256m"
+		      output="${custom.home}/customAdminService/log/AnnotateKKCustomAdminServiceWsdl.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customAdminService/wsdl/customAdminServiceOriginal.wsdl" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/params.txt" />
+			<arg value="${custom.home}/customAdminService/wsdl/customAdminService.wsdl" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+
+		<echo message="Remove Original CustomAdminService WSDL" />
+		<delete file="${custom.home}/customAdminService/wsdl/customAdminServiceOriginal.wsdl" />
+		
+		<echo message="Create the konakartadmin server stubs from the WSDL" />
+		<java classname="org.apache.axis.wsdl.WSDL2Java"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="256m"
+		      output="${custom.home}/customAdminService/log/WSDL2JavaServer.log"
+		      timeout="30000">
+			<arg value="-o" />
+			<arg value="${custom.home}/customAdminService/gensrc/" />
+			<arg value="--server-side" />
+			<arg value="--skeletonDeploy" />
+			<arg value="true" />
+			<arg value="${custom.home}/customAdminService/wsdl/customAdminService.wsdl" />
+			<classpath refid="customAdminService.axis.gen.path" />
+		</java>
+
+		<!-- Remove the app versions that are generated - we'll use the originals instead -->
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/app" />
+		</delete>
+
+		<!--
+             Make the necessary amendments to the generated wsdd file
+        -->
+		<java classname="com.dsdata.util.custom.CreateKKWSCustomAdminServiceWsdd"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKWSCustomAdminServiceWsdd.log"
+		      timeout="40000">
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/deploy.wsdd" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/methods.txt" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/customAdminService.wsdd" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+	
+		<echo message="Rename the KKWSCustomAdminServiceSoapBindingImpl.java file so that we overwrite with the generated version" />
+		<move file="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceSoapBindingImpl.java"
+		      tofile="${custom.home}/customAdminService/temp/KKWSCustomAdminServiceSoapBindingImpl.java" />
+
+		<echo message="Generate the KKWSCustomAdminServiceSoapBindingImpl.java file from the version AXIS generated" />
+		<java classname="com.dsdata.util.custom.CreateKKWSCustomAdminServiceSoapBindingImpl"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKWSCustomAdminServiceSoapBindingImpl.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customAdminService/temp/KKWSCustomAdminServiceSoapBindingImpl.java" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceSoapBindingImpl.java" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+
+		<echo message="Suppress Warnings on generated KKWSCustomAdminServiceSoapBindingSkeleton.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/SuppressWarnings_KKWSCustomAdminServiceSoapBindingSkeleton.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceSoapBindingSkeleton.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+
+		<echo message="Suppress Warnings on generated KKWSCustomAdminServiceSoapBindingStub.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/SuppressWarnings_KKWSCustomAdminServiceSoapBindingStub.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceSoapBindingStub.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+
+		<echo message="Suppress Warnings on generated KKWSCustomAdminServiceIf.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/SuppressWarnings_KKWSCustomAdminServiceIf.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceIf.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+
+		<echo message="Suppress Warnings on generated KKWSCustomAdminServiceIfService.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/SuppressWarnings_KKWSCustomAdminServiceIfService.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceIfService.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+
+		<echo message="Suppress Warnings on generated KKWSCustomAdminServiceIfServiceLocator.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/SuppressWarnings_KKWSCustomAdminServiceIfServiceLocator.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/KKWSCustomAdminServiceIfServiceLocator.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+	</target>
+			  
+	<target name="generate_customAdminService_json" 
+	 description="Builds the Custom Admin Service code - JSON" 
+		 depends="clean_custom_admin_service_classes_json, make_jar_customDB"
+		      if="customStoreService.code.present">
+
+		<echo message="Builds the Custom Store Service code - JSON" />
+		<mkdir dir="${custom.home}/customAdminService/classes" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/json" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/app" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/req" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/resp" />
+		<mkdir dir="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/utils" />
+		<mkdir dir="${custom.home}/customAdminService/lib" />
+		<mkdir dir="${custom.home}/customAdminService/log" />
+		<mkdir dir="${custom.home}/customAdminService/temp" />
+		<mkdir dir="${custom.home}/jar" />
+
+		<echo message="Create objects required at the Admin Engine Interface" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomAdminService_AppFiles"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKJSONCustomAdminService_AppFiles.log"
+		      timeout="30000">
+			<arg value="-i" />
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/app/" />
+			<arg value="-o" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/app/" />
+			<arg value="-x" />
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/app/EXCLUDE_FILES.TXT" />
+			<classpath refid="build.customAdminService.path" />
+		</java>
+
+		<echo message="Generate KKJSONCustomAdminServiceBeanUtils for the objects just created" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomAdminServiceBeanUtils"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKJSONCustomAdminServiceBeanUtils.log"
+		      timeout="30000">
+			<arg value="-i" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/app/" />
+			<arg value="-o" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/utils/KKJSONCustomAdminServiceBeanUtils.java" />
+			<arg value="-x" />
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/app/EXCLUDE_FILES.TXT" />
+			<classpath refid="build.customAdminService.path" />
+		</java>
+
+		<echo message="Generate JSON_CAS_Req_ classes from KKCustomAdminServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomAdminService_Requests"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKJSONCustomAdminServiceRequests.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminServiceIf.java" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/req" />
+			<classpath refid="build.customAdminService.path" />
+		</java>
+
+		<echo message="Generate JSON_CAS_Resp_ classes from KKCustomAdminServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomAdminService_Responses"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKJSONCustomAdminServiceResponses.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminServiceIf.java" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/resp" />
+			<classpath refid="build.customAdminService.path" />
+		</java>
+
+		<echo message="Generate KKJSONCustomAdminServiceEng.java from KKCustomAdminServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomAdminServiceEng"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKJSONCustomAdminServiceEng.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminServiceIf.java" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/KKJSONCustomAdminServiceEng.java" />
+			<classpath refid="build.customAdminService.path" />
+		</java>
+
+		<echo message="Generate KKJSONEngServerIf.java from KKCustomAdminServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomAdminServiceEngServerIf"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKJSONCustomAdminServiceEngServerIf.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminServiceIf.java" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/KKJSONCustomAdminServiceEngServerIf.java" />
+			<classpath refid="build.customAdminService.path" />
+		</java>
+
+		<echo message="Generate KKJSONCustomAdminServiceEngServer.java from KKCustomAdminServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomAdminServiceEngServer"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/CreateKKJSONCustomAdminServiceEngServer.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customAdminService/src/com/konakartadmin/bl/KKCustomAdminServiceIf.java" />
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/json/KKJSONCustomAdminServiceEngServer.java" />
+			<classpath refid="build.customAdminService.path" />
+		</java>
+	</target>
+
+	<target name="generate_customStoreService" 
+	 description="Builds the Custom Store Service code - SOAP WS" 
+		 depends="clean_custom_store_service_classes, make_jar_customDB"
+		      if="customStoreService.code.present">
+
+		<echo message="Builds the Custom Store Service code - SOAP WS" />
+		<mkdir dir="${custom.home}/database/classes" />
+		<mkdir dir="${custom.home}/customStoreService/classes" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc/com/konakart/ws" />
+		<mkdir dir="${custom.home}/customStoreService/lib" />
+		<mkdir dir="${custom.home}/customStoreService/log" />
+		<mkdir dir="${custom.home}/customStoreService/temp" />
+		<mkdir dir="${custom.home}/customStoreService/wsdl" />
+		<mkdir dir="${custom.home}/jar" />
+		
+		<echo message="Find methods in KKCustomStoreServiceIf.java" />
+		<java classname="com.dsdata.util.FindMethods"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/FindMethods-KKCustomStoreServiceIf.log"
+		      timeout="30000">
+			<arg value="-i" />
+			<arg value="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreServiceIf.java" />
+			<arg value="-o" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/methods.txt" />
+			<arg value="-p" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/params.txt" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+		
+		<echo message="Create KKWSCustomStoreServiceIf.java from the KKCustomStoreServiceIf.java file" />
+		<!-- 
+		    We create the WS interface definition file form the KKCustomStoreServiceIf file so that we only 
+		    have to define one and keep these two compatible.   The WS interface has some 
+		    restrictions so we make those changes after the copy. 
+		-->
+		
+		<copy file="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreServiceIf.java"
+		      tofile="${custom.home}/customStoreService/temp/KKWSCustomStoreServiceIf.java"
+		      overwrite="true" />
+		
+		<!-- Change the interface name inside the file because we've just renamed it -->
+		
+		<replace file="${custom.home}/customStoreService/temp/KKWSCustomStoreServiceIf.java"
+		         token="interface KKCustomStoreServiceIf"
+		         value="interface KKWSCustomStoreServiceIf" />
+
+		<!-- Remove the thrown exceptions -->
+		<replace file="${custom.home}/customStoreService/temp/KKWSCustomStoreServiceIf.java"
+		         token="throws KKException;"
+		         value=";" />
+	
+		<!-- Rename the package -->
+		<replace file="${custom.home}/customStoreService/temp/KKWSCustomStoreServiceIf.java"
+		         token="package com.konakart.bl;"
+		         value="package com.konakart.ws;" />
+	
+  		<copy file="${custom.home}/customStoreService/temp/KKWSCustomStoreServiceIf.java"
+		      tofile="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceIf.java"
+		      overwrite="true" />
+
+		<echo message="Create KKWSCustomStoreService.java from the KKCustomStoreServiceIf.java file" />
+		<!--
+			Create the web services implementation of the KKWSCustomStoreServiceIf interface.   
+			We generate this from the KKWSCustomStoreServiceIf automatically so that maintenance is reduced.
+		-->
+		<copy file="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceIf.java"
+		      tofile="${custom.home}/customStoreService/temp/KKWSCustomStoreService.java"
+		      overwrite="true" />
+		
+		<!--
+			Change the class name that's implemented.
+			The WS version must implement the same interface as the non-WS one
+		-->
+		<replace file="${custom.home}/customStoreService/temp/KKWSCustomStoreService.java"
+		         token="public interface KKWSCustomStoreServiceIf"
+		         value="public class KKWSCustomStoreService extends KKWSCustomStoreServiceBase implements KKCustomStoreServiceIf" />
+		<!--
+			Make the necessary changes with a java util
+		-->
+		<java classname="com.dsdata.util.custom.CreateKKWSCustomStoreService"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKWSCustomStoreService.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/temp/KKWSCustomStoreService.java" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreService.java" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+
+		<!--
+		<echo message="Compile Custom Store Service Database sources to produce classes for WSDL generation" />
+		<javac srcdir="${custom.home}/database"
+		       destdir="${custom.home}/database/classes"
+		       debug="${debug_javac}"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       memoryMaximumSize="256m"
+		       includes="gensrc/**/*.java">
+			<classpath refid="custom.store.compile.path" />
+		</javac>
+		-->
+		
+		<echo message="Compile Custom Store Service Interface definitions to produce classes for WSDL generation" />
+		<javac srcdir="${custom.home}/customStoreService"
+		       destdir="${custom.home}/customStoreService/classes"
+		       debug="${debug_javac}"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       memoryMaximumSize="256m"
+		       includes="src/**/app/*.java, gensrc/**/ws/KKWSCustomStoreServiceIf.java">
+			<classpath refid="custom.store.compile.path" />
+		</javac>
+		
+		<echo message="Remove KKWSCustomStoreServiceSoapBindingImpl.java if it exists" />
+		<delete includeEmptyDirs="false" failonerror="false">
+			<fileset dir="${custom.home}/customStoreService/gensrc/com/konakart/ws/">
+				<include name="KKWSCustomStoreServiceSoapBindingImpl.java" />
+			</fileset>
+		</delete>
+		
+		<echo message="Create the Custom Store Service WSDL from the Java" />
+		
+		<java classname="org.apache.axis.wsdl.Java2WSDL"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/Java2WSDL.log"
+		      timeout="60000">
+			<arg value="-o" />
+			<arg value="${custom.home}/customStoreService/wsdl/customStoreServiceOriginal.wsdl" />
+			<arg value="-T" />
+			<arg value="1.2" />
+			<arg value="-u" />
+			<arg value="ENCODED" />
+			<arg value="-y" />
+			<arg value="RPC" />
+			<arg value="-l" />
+			<arg value="http://localhost:${defaultPort}/axis/services/KKWSCustomStoreService" />
+			<arg value="-N" />
+			<arg value="http://ws.konakart.com" />
+			<arg value="-n" />
+			<arg value="http://ws.konakart.com" />
+			<arg value="com.konakart.ws.KKWSCustomStoreServiceIf" />
+			<classpath refid="customStoreService.axis.gen.path" />
+		</java>
+
+		<echo message="Annotate CustomStoreService WSDL" />
+		<java classname="com.dsdata.util.AnnotateWsdl"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/AnnotateKKCustomStoreServiceWsdl.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/wsdl/customStoreServiceOriginal.wsdl" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/params.txt" />
+			<arg value="${custom.home}/customStoreService/wsdl/customStoreService.wsdl" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+
+		<echo message="Remove Original CustomStoreService WSDL" />
+		<delete file="${custom.home}/customStoreService/wsdl/customStoreServiceOriginal.wsdl" />
+		
+		<echo message="Create the konakart server stubs from the WSDL" />
+		<java classname="org.apache.axis.wsdl.WSDL2Java"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/WSDL2JavaServer.log"
+		      timeout="30000">
+			<arg value="-o" />
+			<arg value="${custom.home}/customStoreService/gensrc/" />
+			<arg value="--server-side" />
+			<arg value="--skeletonDeploy" />
+			<arg value="true" />
+			<arg value="${custom.home}/customStoreService/wsdl/customStoreService.wsdl" />
+			<classpath refid="customStoreService.axis.gen.path" />
+		</java>
+
+		<!-- Remove the app versions that are generated - we'll use the originals instead -->
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/customStoreService/gensrc/com/konakart/app" />
+		</delete>
+
+		<!--
+             Make the necessary amendments to the generated wsdd file
+        -->
+		<java classname="com.dsdata.util.custom.CreateKKWSCustomStoreServiceWsdd"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKWSCustomStoreServiceWsdd.log"
+		      timeout="40000">
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/deploy.wsdd" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/methods.txt" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/customStoreService.wsdd" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+
+		<echo message="Rename the KKWSCustomStoreServiceSoapBindingImpl.java file so that we overwrite with the generated version" />
+		<move file="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceSoapBindingImpl.java"
+		      tofile="${custom.home}/customStoreService/temp/KKWSCustomStoreServiceSoapBindingImpl.java" />
+
+		<echo message="Generate the KKWSCustomStoreServiceSoapBindingImpl.java file from the version AXIS generated" />
+		<java classname="com.dsdata.util.custom.CreateKKWSCustomStoreServiceSoapBindingImpl"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKWSCustomStoreServiceSoapBindingImpl.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/temp/KKWSCustomStoreServiceSoapBindingImpl.java" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceSoapBindingImpl.java" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+		
+		<echo message="Suppress Warnings on generated KKWSCustomStoreServiceSoapBindingSkeleton.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/SuppressWarnings_KKWSCustomStoreServiceSoapBindingSkeleton.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceSoapBindingSkeleton.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+		
+		<echo message="Suppress Warnings on generated KKWSCustomStoreServiceSoapBindingStub.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/SuppressWarnings_KKWSCustomStoreServiceSoapBindingStub.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceSoapBindingStub.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+		
+		<echo message="Suppress Warnings on generated KKWSCustomStoreServiceIfServiceLocator.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/SuppressWarnings_KKWSCustomStoreServiceIfServiceLocator.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceIfServiceLocator.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+		
+		<echo message="Suppress Warnings on generated KKWSCustomStoreServiceIf.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/SuppressWarnings_KKWSCustomStoreServiceIf.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceIf.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+			  
+		<echo message="Suppress Warnings on generated KKWSCustomStoreServiceIfService.java" />
+		<java classname="com.dsdata.util.SuppressWarnings"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/SuppressWarnings_KKWSCustomStoreServiceIfService.log"
+		      timeout="40000">
+			<arg value="-f" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/KKWSCustomStoreServiceIfService.java" />
+			<classpath refid="kk_build_utils.path" />
+		</java>
+	</target>
+
+	<target name="generate_customStoreService_json" 
+	 description="Builds the Custom Store Service code - JSON" 
+		 depends="clean_custom_store_service_classes_json, make_jar_customDB"
+		      if="customStoreService.code.present">
+
+		<echo message="Builds the Custom Store Service code - JSON" />
+		<mkdir dir="${custom.home}/customStoreService/classes" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc/com/konakart/json" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc/com/konakart/json/app" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc/com/konakart/json/req" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc/com/konakart/json/resp" />
+		<mkdir dir="${custom.home}/customStoreService/gensrc/com/konakart/json/utils" />
+		<mkdir dir="${custom.home}/customStoreService/lib" />
+		<mkdir dir="${custom.home}/customStoreService/log" />
+		<mkdir dir="${custom.home}/customStoreService/temp" />
+		<mkdir dir="${custom.home}/jar" />
+
+		<echo message="Create objects required at the Application Engine Interface" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomStoreService_AppFiles"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKJSONCustomStoreService_AppFiles.log"
+		      timeout="30000">
+			<arg value="-i" />
+			<arg value="${custom.home}/customStoreService/src/com/konakart/app/" />
+			<arg value="-o" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/app/" />
+			<arg value="-x" />
+			<arg value="${custom.home}/customStoreService/src/com/konakart/app/EXCLUDE_FILES.TXT" />
+			<classpath refid="build.customStoreService.path" />
+		</java>
+
+		<echo message="Generate KKJSONCustomStoreServiceBeanUtils for the objects just created" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomStoreServiceBeanUtils"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKJSONCustomStoreServiceBeanUtils.log"
+		      timeout="30000">
+			<arg value="-i" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/app/" />
+			<arg value="-o" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/utils/KKJSONCustomStoreServiceBeanUtils.java" />
+			<arg value="-x" />
+			<arg value="${custom.home}/customStoreService/src/com/konakart/app/EXCLUDE_FILES.TXT" />
+			<classpath refid="build.customStoreService.path" />
+		</java>
+
+		<echo message="Generate JSON_CSS_Req_ classes from KKCustomStoreServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomStoreService_Requests"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKJSONCustomStoreServiceRequests.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreServiceIf.java" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/req" />
+			<classpath refid="build.customStoreService.path" />
+		</java>
+
+		<echo message="Generate JSON_CSS_Resp_ classes from KKCustomStoreServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomStoreService_Responses"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKJSONCustomStoreServiceResponses.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreServiceIf.java" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/resp" />
+			<classpath refid="build.customStoreService.path" />
+		</java>
+
+		<echo message="Generate KKJSONCustomStoreServiceEng.java from KKCustomStoreServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomStoreServiceEng"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKJSONCustomStoreServiceEng.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreServiceIf.java" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/KKJSONCustomStoreServiceEng.java" />
+			<classpath refid="build.customStoreService.path" />
+		</java>
+
+		<echo message="Generate KKJSONEngServerIf.java from KKCustomStoreServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomStoreServiceEngServerIf"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKJSONCustomStoreServiceEngServerIf.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreServiceIf.java" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/KKJSONCustomStoreServiceEngServerIf.java" />
+			<classpath refid="build.customStoreService.path" />
+		</java>
+
+		<echo message="Generate KKJSONCustomStoreServiceEngServer.java from KKCustomStoreServiceIf.java" />
+		<java classname="com.dsdata.util.custom.CreateKKJSONCustomStoreServiceEngServer"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/CreateKKJSONCustomStoreServiceEngServer.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/src/com/konakart/bl/KKCustomStoreServiceIf.java" />
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/json/KKJSONCustomStoreServiceEngServer.java" />
+			<classpath refid="build.customStoreService.path" />
+		</java>
+	</target>
+			  
+	<target name="compile" description="Compile the customisable application code">
+		<echo message="Compile the customisable application code" />
+
+		<antcall target="compile_appn"/>
+		<antcall target="compile_appnEE"/>
+		
+		<antcall target="compile_appEngEE"/>
+
+		<antcall target="compile_adminappn"/>
+		<antcall target="compile_adminappnEE"/>
+		
+		<antcall target="compile_konakartadmin_app"/>
+		
+		<antcall target="compile_customStoreService"/>
+		<antcall target="compile_customAdminService"/>
+	</target>
+
+	<target name="compile_appn" description="Compile the customisable appn code"
+		if="appn.code.present">
+
+		<echo message="Copy the properties over to ${custom.home}/appn/classes" />
+		<copy todir="${custom.home}/appn/classes/">
+			<fileset dir="${custom.home}/appn/src/">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+
+		<echo message="Compile the application code - to workaround circular reference problems" />
+		<mkdir dir="${custom.home}/appnTemp/classes" />
+		<javac srcdir="${custom.home}"
+		       destdir="${custom.home}/appnTemp/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}">
+			<classpath refid="compile.path" />
+			<include name="appn/**/*.java" />
+			<include name="appnEE/**/*.java" />
+			<include name="appEngEE/**/*.java" />
+		</javac>
+
+		<echo message="Compile the customisable application code" />
+		<mkdir dir="${custom.home}/appn/classes" />
+		<javac srcdir="${custom.home}/appn/src/"
+		       destdir="${custom.home}/appn/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+
+	<target name="compile_adminappn" description="Compile the customisable admin appn code"
+		if="adminappn.code.present">
+
+		<mkdir dir="${custom.home}/adminappn/classes" />
+		<javac srcdir="${custom.home}/adminappn/src/"
+		       destdir="${custom.home}/adminappn/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="konakartadmin.compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_appnEE" description="Compile the customisable appnEE code"
+		if="appnEE.code.present">
+
+		<echo message="Compile the customisable appnEE code" />
+		<mkdir dir="${custom.home}/appnEE/classes" />
+		<javac srcdir="${custom.home}/appnEE/src/"
+		       destdir="${custom.home}/appnEE/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_appEngEE" description="Compile the customisable appEngEE code"
+		if="appEngEE.code.present">
+
+		<echo message="Compile the customisable appEngEE code" />
+		<mkdir dir="${custom.home}/appEngEE/classes" />
+		<javac srcdir="${custom.home}/appEngEE/src/"
+		       destdir="${custom.home}/appEngEE/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_adminappnEE" description="Compile the customisable admin appnEE code"
+		if="adminappnEE.code.present">
+
+		<echo message="Compile the customisable adminappnEE code" />
+		<mkdir dir="${custom.home}/adminappnEE/classes" />
+		<javac srcdir="${custom.home}/adminappnEE/src/"
+		       destdir="${custom.home}/adminappnEE/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="konakartadmin.compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_customAdminService" description="Compile the Custom Admin Service code"
+		if="customAdminService.code.present">
+
+		<echo message="Compile the Custom Admin Service code" />
+		<mkdir dir="${custom.home}/customAdminService/classes" />
+		<javac srcdir="${custom.home}/customAdminService/"
+		       destdir="${custom.home}/customAdminService/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="src/**/*.java gensrc/**/*.java"
+			   excludes="**/*JSON*.java">
+			<classpath refid="custom.admin.compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_customAdminService_json" description="Compile the Custom Admin Service code including JSON"
+		if="customAdminService.code.present">
+
+		<echo message="Compile the Custom Admin Service code including JSON" />
+		<mkdir dir="${custom.home}/customAdminService/classes" />
+		<javac srcdir="${custom.home}/customAdminService/"
+		       destdir="${custom.home}/customAdminService/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="src/**/*.java gensrc/**/*.java">
+			<classpath refid="custom.admin.compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_customStoreService" description="Compile the Custom Store Service code"
+		if="customStoreService.code.present">
+
+		<echo message="Compile the Custom Store Service code" />
+		<mkdir dir="${custom.home}/customStoreService/classes" />
+		<javac srcdir="${custom.home}/customStoreService/"
+		       destdir="${custom.home}/customStoreService/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="src/**/*.java gensrc/**/*.java"
+			   excludes="**/*JSON*.java">
+			<classpath refid="custom.store.compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_customStoreService_json" description="Compile the Custom Store Service code - including JSON"
+		if="customStoreService.code.present">
+
+		<echo message="Compile the Custom Store Service code - including JSON" />
+		<mkdir dir="${custom.home}/customStoreService/classes" />
+		<javac srcdir="${custom.home}/customStoreService/"
+		       destdir="${custom.home}/customStoreService/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="src/**/*.java gensrc/**/*.java">
+			<classpath refid="custom.store.compile.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_admin_portlet_liferay" description="Compile the Admin portlet utilities for Liferay">
+		<echo message="Compile the Admin portlet utilities for Liferay" />
+
+		<mkdir dir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/classes" />
+		
+		<echo message="Compile the Admin portlet utilities for Liferay v${KKPortalVersion}" />
+
+		<javac srcdir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/src/"
+		       destdir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.admin.portal.${KKPortalVersion}.path" />
+		</javac>
+	</target>
+	
+	<!--
+	<target name="compile_admin_portlet_liferay_v6" 
+	        description="Compile the Admin portlet utilities for Liferay v6"
+			if="KKPortalVersion6">
+		<echo message="Compile the Admin portlet utilities for Liferay v${KKPortalVersion}" />
+
+		<javac srcdir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/src/"
+		       destdir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.admin.portal.${KKPortalVersion}.path" />
+		</javac>
+	</target>
+	
+	<target name="compile_admin_portlet_liferay_v7" 
+	        description="Compile the Admin portlet utilities for Liferay v7"
+			if="KKPortalVersion7">
+		<echo message="Compile the Admin portlet utilities for Liferay v${KKPortalVersion}" />
+
+		<javac srcdir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/src/"
+		       destdir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.admin.portal.${KKPortalVersion}.path" />
+		</javac>
+	</target>
+	-->
+	
+	<target name="compile_utils" description="Compile the customisable utils code"
+		if="utils.code.present">
+		<echo message="Compile the customisable utils code" />
+
+		<mkdir dir="${custom.home}/utils/classes" />
+		<javac srcdir="${custom.home}/utils/"
+		       destdir="${custom.home}/utils/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="src/**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+
+	<target name="compile_konakartadmin_app" description="Compile the konakartadmin_app code"
+		if="konakartadmin_app.code.present">
+
+		<mkdir dir="${custom.home}/konakartadmin_app/build/classes" />
+		<javac srcdir="${custom.home}/konakartadmin_app"
+		       destdir="${custom.home}/konakartadmin_app/build/classes"
+			   encoding="UTF-8"
+		       debug="${debug_javac}"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       memoryMaximumSize="256m"
+		       includes="src/**/*.java">
+			<classpath refid="konakartadmin_app.compile.path" />
+		</javac>
+	</target>
+
+	<target name="generate_torque_java" description="Process the Custom Schema to produce torque java files" 
+	        if="torque.build.present" >
+
+		<echo message="Clean directories created by generator before we start" />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${basedir}/database/src/java" />
+			<fileset dir="${user.dir}/src/main" />
+		</delete>
+
+		<echo message="Process the Custom Schema to produce torque java files" />
+		<ant dir="./database"
+		     antfile="build-torque.xml"
+			 target="generate"
+		     output="custom-schema-gen.log" />
+
+		<echo message="Copy generated files to database src directory from ${user.dir}/src/main/generated-java" />
+
+		<move todir="./database/gensrc/">
+			<fileset dir="${user.dir}/src/main/generated-java">
+				<include name="**/*.java" />
+				<exclude name="**/Store1DatabaseMapInit.java" />
+			</fileset>
+		</move>
+
+		<echo message="Copy generated files to database src directory from ${basedir}/database/src/java/" />
+
+		<move todir="./database/gensrc/">
+			<fileset dir="${basedir}/database/src/java/">
+				<include name="**/*.java" />
+				<exclude name="**/Store1DatabaseMapInit.java" />
+			</fileset>
+		</move>
+
+		<echo message="Delete directories created by generator" />
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${basedir}/database/src/java" />
+			<fileset dir="${user.dir}/src/main" />
+		</delete>
+		
+		<echo message="Modify generated Database Map class for Custom Schema" />
+		<move file="./database/gensrc/com/konakart/om/BaseStore1DatabaseMapInit.java"
+		    tofile="./database/gensrc/com/konakart/om/BaseCustomStore1DatabaseMapInit.java" />
+
+		<replace file="./database/gensrc/com/konakart/om/BaseCustomStore1DatabaseMapInit.java"
+		        token="class BaseStore1DatabaseMapInit"
+		        value="class BaseCustomStore1DatabaseMapInit implements com.konakart.blif.KKCustomSchemaMapIf" />
+		<replace file="./database/gensrc/com/konakart/om/BaseCustomStore1DatabaseMapInit.java"
+		        token="public static final void init("
+		        value="public void init(" />
+	</target>
+
+	<target name="create_torque_classes" description="Process the Custom Schema to produce torque classes" 
+	        if="torque.build.present" depends="clean_torque_classes, generate_torque_java">
+		<echo message="Process the Custom Schema to produce torque classes" />
+		
+		<echo message="Compile the custom schema code" />
+		<mkdir dir="${custom.home}/database/classes" />
+		<javac srcdir="${custom.home}/database/gensrc/"
+		       destdir="${custom.home}/database/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+
+	<target name="compile_custom_engine" description="Compile the customisable engine code"
+		if="engine.code.present">
+		<echo message="Compile the customisable engine code" />
+
+		<mkdir dir="${custom.home}/engine/classes" />
+		<javac srcdir="${custom.home}/engine/src/:${custom.home}/engine/gensrc/"
+		       destdir="${custom.home}/engine/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+
+	<target name="compile_custom_adminengine"
+	        description="Compile the customisable admin engine code"
+		if="adminengine.code.present">
+		<echo message="Compile the customisable admin engine code" />
+
+		<mkdir dir="${custom.home}/adminengine/classes" />
+		<javac srcdir="${custom.home}/adminengine/src/:${custom.home}/adminengine/gensrc/"
+		       destdir="${custom.home}/adminengine/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+
+	<target name="compile_modules" description="Compile the customisable module code">
+		<echo message="Compile the customisable module code" />
+
+		<mkdir dir="${custom.home}/modules/classes" />
+		<javac srcdir="${custom.home}/modules/src/"
+		       destdir="${custom.home}/modules/classes"
+		       debug="${debug_javac}"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="compile.path" />
+		</javac>
+
+		<subant target="make_payment_module_jar" genericantfile="./build.xml">
+			<property name="konakart.version" value="${konakart.version}"/>
+			<dirset dir="${custom.home}/modules/src/com/konakart/bl/modules/payment/"
+			        includes="*" />
+		</subant>
+
+		<subant target="make_ordertotal_module_jar" genericantfile="./build.xml">
+			<property name="konakart.version" value="${konakart.version}"/>
+			<dirset dir="${custom.home}/modules/src/com/konakart/bl/modules/ordertotal/"
+			        includes="*" />
+		</subant>
+
+		<subant target="make_shipping_module_jar" genericantfile="./build.xml">
+			<property name="konakart.version" value="${konakart.version}"/>
+			<dirset dir="${custom.home}/modules/src/com/konakart/bl/modules/shipping/"
+			        includes="*" />
+		</subant>
+
+		<subant target="make_other_module_jar" genericantfile="./build.xml">
+			<property name="konakart.version" value="${konakart.version}"/>
+			<dirset dir="${custom.home}/modules/src/com/konakartadmin/modules/others/"
+			        includes="*" />
+		</subant>
+	</target>
+
+	<target name="make_payment_module_jar" description="Create the payment module jar">
+		<echo message="Create the payment module jar" />
+		<make_module_jar module.type="payment" modules.dir="modules" modules.ver="" />
+	</target>
+
+	<target name="make_ordertotal_module_jar" description="Create the ordertotal module jar">
+		<echo message="Create the order total module jar" />
+		<make_module_jar module.type="ordertotal" modules.dir="modules" modules.ver="" />
+	</target>
+
+	<target name="make_other_module_jar" description="Create the other module jar">
+		<echo message="Create the other module jar" />
+		<make_module_jar module.type="others" modules.dir="modules" modules.ver="" />
+	</target>
+
+	<target name="make_shipping_module_jar" description="Create the shipping module jar">
+		<echo message="Create the shipping module jar" />
+		<make_module_jar module.type="shipping" modules.dir="modules" modules.ver="" />
+	</target>
+
+	<macrodef name="make_module_jar" description="Create the module jar of the specified type">
+		<attribute name="module.type" />
+		<attribute name="modules.dir" />
+		<attribute name="modules.ver" />
+		<sequential>
+			<mkdir dir="${custom.home}/jar" />
+			<basename property="mod_name" file="${basedir}" />
+			<jar destfile="${custom.home}/jar/konakart_@{module.type}@{modules.ver}_${mod_name}-${konakart.version}.jar"
+				manifest="${custom.home}/MANIFEST.MF">
+				<fileset dir="${custom.home}/@{modules.dir}/classes" casesensitive="false">
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/*.*" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/*/*.*" />
+					<include name="com/konakart/actions/*/${mod_name}*Action*.class" />
+					<exclude name="com/konakart/actions/*/${mod_name}XMLRedirect*Action.class" />
+					<exclude name="com/konakart/actions/*/${mod_name}LoginAction.class" />
+				</fileset>
+				<fileset dir="${custom.home}/@{modules.dir}/src" casesensitive="false">
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/readme.txt" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/Readme.txt" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/README.txt" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/README.TXT" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/*.properties" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/*.ldif" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/*.java" />
+					<include name="com/konakart*/**/@{module.type}/${mod_name}/*/*.java" />
+					<include name="com/konakart/actions/*/${mod_name}*Action.java" />
+					<exclude name="com/konakart/actions/*/${mod_name}XMLRedirect*Action.java" />
+					<exclude name="com/konakart/actions/*/${mod_name}LoginAction.java" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
+
+	<target name="make_jars" description="Create the konakart custom jars"
+		depends="make_jar_custom,
+				 make_jar_customEE,
+				 make_jar_custom_engine,
+				 make_jar_customDB,
+				 make_jar_customAdminService,
+				 make_jar_customStoreService,
+				 make_jar_appEngEE,make_jar_custom_utils,
+				 make_jar_custom_admin,
+				 make_jar_custom_adminEE,
+				 make_jar_custom_adminengine,
+				 make_jar_konakartadmin_app">
+	</target>
+
+	<target name="make_jar_custom" description="Create konakart_custom jar"
+		if="appn.code.present">
+		<echo message="Create konakart_custom-${konakart.version}.jar" />
+		<mkdir dir="${custom.home}/jar" />
+		<jar destfile="${custom.home}/jar/konakart_custom-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/appn/classes">
+				<patternset refid="konakart_custom_jar_contents" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_konakartadmin_app" description="Create the konakartadmin_app jar"
+		if="konakartadmin_app.code.present">
+		<echo message="Create konakartadmin_app-${konakart.version}.jar" />
+
+		<mkdir dir="${custom.home}/jar" />
+		
+		<jar destfile="${custom.home}/jar/konakartadmin_app-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/konakartadmin_app/build/classes">
+				<include name="com/konakartadmin/**/*.class" />
+			</fileset>
+			<fileset dir="${custom.home}/../">
+				<include name="ENTERPRISE-LICENSE.txt" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_customEE" description="Create the konakart_customEE jar"
+		if="appnEE.code.present">
+		<echo message="Create konakart_customEE-${konakart.version}.jar" />
+
+		<mkdir dir="${custom.home}/jar" />
+		
+		<jar destfile="${custom.home}/jar/konakart_customEE-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/appnEE/classes">
+				<patternset refid="enterprise_konakart_customEE_files" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_custom_engine" description="Create the konakart_custom_engine jar"
+		if="engine.code.present">
+		<echo message="Create konakart_custom_engine-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakart_custom_engine-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/engine/classes">
+				<include name="com/konakart/**/*.class" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_customAdminService" description="Create the konakartadmin_custom_admin_service jar"
+		if="customAdminService.code.present">
+
+		<echo message="Create konakartadmin_custom_admin_service-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakartadmin_custom_admin_service-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/customAdminService/classes">
+				<include name="com/konakartadmin/**/*.class" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_customStoreService" description="Create the konakart_custom_store_service jar"
+		if="customStoreService.code.present">
+
+		<echo message="Create konakart_custom_store_service-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakart_custom_store_service-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/customStoreService/classes">
+				<include name="com/konakart/**/*.class" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_customDB" description="Create the konakart_custom_db jar"
+		depends="create_torque_classes"
+		if="torque.build.present">
+
+		<echo message="Create konakart_custom_db-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakart_custom_db-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/database/classes">
+				<include name="com/konakart/**/*.class" />
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="make_jar_appEngEE" description="Create the konakart_app jar"
+		if="appEngEE.code.present">
+		<echo message="Create konakart_app-${konakart.version}.jar"/>
+		<jar destfile="${custom.home}/jar/konakart_app-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF" 
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/appEngEE/classes">
+				<patternset refid="kkappeng_files" />
+			</fileset>
+			<fileset dir="${custom.home}/../">
+				<include name="COMMUNITY-LICENSE.txt" />
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="make_jar_custom_utils" description="Create the konakart_custom_utils jar"
+		if="utils.code.present">
+		<echo message="Create konakart_custom_utils-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakart_custom_utils-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/utils/classes">
+				<patternset refid="custom_utils" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_custom_admin" description="Create the konakartadmin_custom jar"
+		if="adminappn.code.present">
+		<echo message="Create konakartadmin_custom-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakartadmin_custom-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/adminappn/classes">
+				<include name="com/konakartadmin/**/*.class" />
+			</fileset>
+			<fileset dir="${custom.home}/adminappn/src">
+				<include name="com/konakartadmin/**/*.properties" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_custom_adminEE" description="Create the konakartadmin_customEE jar"
+		if="adminappnEE.code.present">
+		<echo message="Create konakartadmin_customEE-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakartadmin_customEE-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/adminappnEE/classes">
+				<include name="com/konakartadmin/**/*.class" />
+			</fileset>
+			<fileset dir="${custom.home}/adminappnEE/src">
+				<include name="com/konakartadmin/**/*.properties" />
+				<include name="com/konakartadmin/**/*.ldif" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="make_jar_custom_adminengine" description="Create the konakartadmin_custom_engine jar"
+		if="adminengine.code.present">
+		<echo message="Create konakartadmin_custom_engine-${konakart.version}.jar" />
+		<jar destfile="${custom.home}/jar/konakartadmin_custom_engine-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF"
+			whenmanifestonly="skip">
+			<fileset dir="${custom.home}/adminengine/classes">
+				<include name="com/konakartadmin/**/*.class" />
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="copy_jars" description="Copy selected custom konakart jars to the lib directories">
+		<echo message="Copy the custom jars to their respective lib directories" />
+		<copy todir="../webapps/konakartadmin/WEB-INF/lib/">
+			<fileset dir="./jar/" >
+				<exclude name="konakart_app-${konakart.version}.jar" />
+				<exclude name="konakart_custom_engine-${konakart.version}.jar" />
+				<exclude name="konakartadmin_app-${konakart.version}.jar" />
+			</fileset>
+		</copy>
+		
+		<echo message="Copy the custom jars to their respective lib directories" />
+		<copy todir="../webapps/konakart/WEB-INF/lib/">
+			<fileset dir="./jar/" >
+				<exclude name="konakartadmin_custom-${konakart.version}.jar" />
+				<exclude name="konakartadmin_customEE-${konakart.version}.jar" />
+				<exclude name="konakartadmin_custom_engine-${konakart.version}.jar" />
+				<exclude name="konakartadmin_app-${konakart.version}.jar" />
+			</fileset>
+		</copy>
+		
+		<antcall target="copy_jars_EE" />
+	</target>
+
+	<target name="copy_jars_EE" if="kk.enterprise.present">
+		<echo message="Copy konakartadmin_app-${konakart.version}.jar to the konakartadmin_app lib directory" />
+		<copy todir="../webapps/konakartadmin_app/WEB-INF/lib/">
+			<fileset dir="./jar/" >
+				<include name="konakartadmin_app-${konakart.version}.jar" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="deploy_customDB" 
+	 description="Deploys the Custom Database Jar" 
+			if="torque.build.present">
+		<echo message="Copy konakart_custom_db-${konakart.version}.jar to konakart webapp" />
+		<copy file="${custom.home}/jar/konakart_custom_db-${konakart.version}.jar"
+		      tofile="${konakart.dir}/WEB-INF/lib/konakart_custom_db-${konakart.version}.jar"
+		      overwrite="true" />
+		<echo message="Copy konakart_custom_db-${konakart.version}.jar to konakartadmin webapp" />
+		<copy file="${custom.home}/jar/konakart_custom_db-${konakart.version}.jar"
+		      tofile="${konakartadmin.dir}/WEB-INF/lib/konakart_custom_db-${konakart.version}.jar"
+		      overwrite="true" />
+	</target>
+	
+	<target name="deploy_customStoreService" 
+	 description="Deploys the Custom Store Service Web Service" 
+		      if="customStoreService.code.present">
+		<antcall target="deploy_customStoreService_ifApplicable" />
+	</target>
+			  
+	<target name="deploy_customStoreService_ifApplicable"
+		      if="konakart.server.config.present">
+
+		<echo message="Copy konakart_custom_store_service-${konakart.version}.jar to konakart webapp" />
+		<copy file="${custom.home}/jar/konakart_custom_store_service-${konakart.version}.jar"
+		      tofile="${konakart.dir}/WEB-INF/lib/konakart_custom_store_service-${konakart.version}.jar"
+		      overwrite="false" />
+			  
+		<echo message="Save previous version of server-config.wsdd" />
+		<copy file="${konakart.dir}/WEB-INF/server-config.wsdd"
+		      tofile="${custom.home}/customStoreService/temp/server-config.wsdd"
+		      overwrite="true" />
+			  
+		<echo message="Deploys the Custom Store Service Web Service" />
+		<java classname="com.dsdata.util.custom.MergeServiceConfigWsdd"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customStoreService/log/MergeServiceConfigWsdd.log"
+		      timeout="30000">
+			<arg value="${custom.home}/customStoreService/gensrc/com/konakart/ws/customStoreService.wsdd" />
+			<arg value="${custom.home}/customStoreService/temp/server-config.wsdd" />
+			<arg value="${konakart.dir}/WEB-INF/server-config.wsdd" />
+			<arg value="KKWSCustomStoreServiceIfService" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+	</target>
+			 
+	<target name="deploy_customStoreService_json" 
+	 description="Deploys the Custom Store Service JSON Service" 
+		      if="customStoreService.code.present">
+
+		<echo message="Copy konakart_custom_store_service-${konakart.version}.jar to konakart webapp" />
+		<copy file="${custom.home}/jar/konakart_custom_store_service-${konakart.version}.jar"
+		      tofile="${konakart.dir}/WEB-INF/lib/konakart_custom_store_service-${konakart.version}.jar"
+		      overwrite="false" />
+	</target>
+	
+	<target name="deploy_customAdminService" 
+	 description="Deploys the Custom Admin Service Web Service" 
+		      if="customAdminService.code.present">
+		<antcall target="deploy_customAdminService_ifApplicable" />
+	</target>
+	
+	<target name="deploy_customAdminService_json" 
+	 description="Deploys the Custom Admin Service JSON Service" 
+		      if="customAdminService.code.present">
+		
+		<echo message="Copy konakartadmin_custom_admin_service-${konakart.version}.jar to konakartadmin webapp" />
+		<copy file="${custom.home}/jar/konakartadmin_custom_admin_service-${konakart.version}.jar"
+		      tofile="${konakartadmin.dir}/WEB-INF/lib/konakartadmin_custom_admin_service-${konakart.version}.jar"
+		      overwrite="true" />
+	</target>
+			  
+	<target name="deploy_customAdminService_ifApplicable"
+		      if="konakartadmin.server.config.present">
+
+		<echo message="Copy konakartadmin_custom_admin_service-${konakart.version}.jar to konakart webapp" />
+		<copy file="${custom.home}/jar/konakartadmin_custom_admin_service-${konakart.version}.jar"
+		      tofile="${konakartadmin.dir}/WEB-INF/lib/konakartadmin_custom_admin_service-${konakart.version}.jar"
+		      overwrite="true" />
+			  
+		<echo message="Save previous version of server-config.wsdd" />
+		<copy file="${konakartadmin.dir}/WEB-INF/server-config.wsdd"
+		      tofile="${custom.home}/customAdminService/temp/server-config.wsdd"
+		      overwrite="true" />
+			  
+		<echo message="Deploys the Custom Admin Service Web Service" />
+		<java classname="com.dsdata.util.custom.MergeServiceConfigWsdd"
+		      fork="true"
+		      failonerror="true"
+		      maxmemory="128m"
+		      output="${custom.home}/customAdminService/log/MergeServiceConfigWsdd.log"
+		      timeout="40000">
+			<arg value="${custom.home}/customAdminService/gensrc/com/konakartadmin/ws/customAdminService.wsdd" />
+			<arg value="${custom.home}/customAdminService/temp/server-config.wsdd" />
+			<arg value="${konakartadmin.dir}/WEB-INF/server-config.wsdd" />
+			<arg value="KKWSCustomAdminServiceIfService" />
+			<classpath refid="build.soap.utils.path" />
+		</java>
+	</target>
+	
+	<target name="make_wars" depends="clean_wars" description="Create the konakart wars">
+		<mkdir dir="${custom.home}/war/stage/konakart/WEB-INF" />
+		<mkdir dir="${custom.home}/war/stage/konakart/WEB-INF/classes" />
+		<mkdir dir="${custom.home}/war/stage/konakart/WEB-INF/lib" />
+		<mkdir dir="${custom.home}/war/stage/konakartadmin/WEB-INF" />
+		<mkdir dir="${custom.home}/war/stage/konakartadmin/WEB-INF/classes" />
+		<mkdir dir="${custom.home}/war/stage/konakartadmin/WEB-INF/lib" />
+		<mkdir dir="${custom.home}/war/stage/birtviewer" />
+
+		<echo message="Copy konakart libs to stage to allow for some modifications" />
+		<copy todir="${custom.home}/war/stage/konakart/WEB-INF/lib/">
+			<fileset dir="${custom.home}/../webapps/konakart/WEB-INF/lib/" />
+		</copy>
+
+		<echo message="Include log4j.properties (log4j1) in case the appserver needs it" />
+		<copy tofile="${custom.home}/war/stage/konakart/WEB-INF/classes/log4j.properties"
+			    file="${custom.home}/log4j.properties" >
+		</copy>
+		<copy tofile="${custom.home}/war/stage/konakartadmin/WEB-INF/classes/log4j.properties"
+			    file="${custom.home}/log4j.properties" >
+		</copy>
+
+		<echo message="Copy konakartadmiin libs to stage to allow for some modifications" />
+		<copy todir="${custom.home}/war/stage/konakartadmin/WEB-INF/lib/">
+			<fileset dir="${custom.home}/../webapps/konakartadmin/WEB-INF/lib/" />
+		</copy>
+
+		<echo message="Copy web.xml to stage to allow for some modifications" />
+		<copy file="${custom.home}/../webapps/konakart/WEB-INF/web.xml" 
+		    tofile="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		    overwrite="true"/>
+			
+		<echo message="Copy jboss-deployment-structure.xml to stage to allow for some modifications" />
+		<copy file="${custom.home}/../webapps/konakart/WEB-INF/jboss-deployment-structure.xml" 
+		    tofile="${custom.home}/war/stage/konakart/WEB-INF/jboss-deployment-structure.xml"
+		    overwrite="true"/>
+
+		<echo message="Copy wildfly-deployment-structure.xml to stage to allow for some modifications" />
+		<copy file="${custom.home}/../webapps/konakart/WEB-INF/wildfly-deployment-structure.xml" 
+		    tofile="${custom.home}/war/stage/konakart/WEB-INF/wildfly-deployment-structure.xml"
+		    overwrite="true"/>
+
+		<antcall target="adjustKonaKartWarForJBoss" />
+		<antcall target="adjustKonaKartWarForWildfly" />
+		<antcall target="adjustKonaKartWarForGlassfish" />
+			
+		<echo message="Create konakart.war" />
+		<war destfile="./war/konakart.war" 
+		    webxml="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+			manifest="${custom.home}/MANIFEST.MF">
+			<fileset dir="../webapps/konakart/">
+				<include name="**/*" />
+				<exclude name="**/web.xml" />
+				<exclude name="**/jboss-deployment-structure.xml" />
+				<exclude name="**/jboss-classloading.xml" />
+				<exclude name="**/wildfly-deployment-structure.xml" />
+				<exclude name="**/Thumbs.db" />
+				<exclude name="WEB-INF/lib/**/*" />
+			</fileset>
+			<fileset dir="${custom.home}/war/stage/konakart/">
+				<include name="WEB-INF/jboss-deployment-structure.xml" />
+				<include name="WEB-INF/jboss-classloading.xml" />
+			</fileset>
+			<fileset dir="${custom.home}/war/stage/konakart/">
+				<include name="WEB-INF/lib/**/*" />
+				<include name="WEB-INF/classes/**/*" />
+			</fileset>
+		</war>
+
+		<echo message="Copy web.xml to stage to allow for some modifications" />
+		<copy file="${custom.home}/../webapps/konakartadmin/WEB-INF/web.xml" 
+		    tofile="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		    overwrite="true"/>
+
+		<antcall target="adjustKonaKartAdminWarForJBoss" />
+		<antcall target="adjustKonaKartAdminWarForWildfly" />
+		<antcall target="adjustKonaKartAdminWarForGlassfish" />
+		
+		<echo message="Create konakartadmin.war" />
+		<war destfile="./war/konakartadmin.war" 
+			webxml="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+			manifest="${custom.home}/MANIFEST.MF">
+			<fileset dir="../webapps/konakartadmin/">
+				<include name="**/*" />
+				<exclude name="**/web.xml" />
+				<exclude name="**/jboss-classloading.xml" />
+				<exclude name="**/Thumbs.db" />
+				<exclude name="WEB-INF/lib/**/*" />
+			</fileset>
+			<fileset dir="${custom.home}/war/stage/konakartadmin/">
+				<include name="WEB-INF/lib/**/*" />
+				<include name="WEB-INF/classes/**/*" />
+			</fileset>
+			<fileset dir="${custom.home}/war/stage/konakart/">
+				<include name="WEB-INF/jboss-classloading.xml" />
+			</fileset>
+		</war>
+
+		<echo message="Copy BIRT webapp to stage to allow for some modifications" />
+		<copy todir="${custom.home}/war/stage/birtviewer" overwrite="true">
+			<fileset dir="${custom.home}/../webapps/birtviewer" />
+		</copy>
+		<copy tofile="${custom.home}/war/stage/birtviewer/WEB-INF/classes/log4j.properties"
+			    file="${custom.home}/log4j.properties" >
+		</copy>
+
+		<antcall target="adjustBirtViewerWarForWeblogic" />
+
+		<echo message="Create birtviewer.war" />
+		<war destfile="./war/birtviewer.war" webxml="${custom.home}/war/stage/birtviewer/WEB-INF/web.xml"
+			manifest="${custom.home}/MANIFEST.MF">
+			<fileset dir="${custom.home}/war/stage/birtviewer/">
+				<include name="**/*" />
+				<exclude name="**/web.xml" />
+				<exclude name="**/Thumbs.db" />
+			</fileset>
+		</war>
+		
+		<antcall target="make_wars_EE" />
+	</target>
+
+	<target name="make_wars_EE" if="kk.enterprise.present">
+		<echo message="Create konakartadmin_app.war" />
+		<war destfile="./war/konakartadmin_app.war" 
+		    webxml="${custom.home}/../webapps/konakartadmin_app/WEB-INF/web.xml"
+			manifest="${custom.home}/MANIFEST.MF">
+			<fileset dir="../webapps/konakartadmin_app/">
+				<include name="**/*" />
+				<exclude name="**/web.xml" />
+				<exclude name="**/Thumbs.db" />
+			</fileset>
+		</war>
+	</target>
+
+	<target name="adjustBirtViewerWarForWeblogic" if="forWeblogic">
+		<echo message="Make adjustments to BIRTViewer WAR files for Weblogic" />
+		
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/war/stage/birtviewer/WEB-INF/lib">
+				<include name="org.apache.xerces_2.9.0.v201101211617.jar" />
+			</fileset>
+		</delete>
+		
+		<move file="${custom.home}/war/stage/birtviewer/WEB-INF/lib/org.apache.xerces_2.9.0.v201101211617_kk.jar.weblogic"
+		      tofile="${custom.home}/war/stage/birtviewer/WEB-INF/lib/org.apache.xerces_2.9.0.v201101211617_kk.jar" />
+	</target>
+
+	<target name="adjustKonaKartWarForJBoss" if="forJBoss">
+		<echo message="Make adjustments to KonaKart WAR files for JBoss" />
+		
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='- JBoss'
+		         value='- JBoss --&gt;' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='- JBoss --&gt; --&gt;'
+		         value='- JBoss --&gt;' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='End of JBoss'
+		         value='&lt;!-- End of JBoss' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JBoss'
+		         value='&lt;!-- End of JBoss' />
+ 
+		<echo message="Disable JAXWS for JBoss" />
+		
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt; --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='&lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+
+		<echo message="Make adjustments for JBoss WAR" />
+		<echo message="Remove webservices-rt-*" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/war/stage/konakart/WEB-INF/lib">
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+		
+		<antcall target="adjustKonaKartWarForJBoss510" />
+	</target>
+
+	<target name="adjustKonaKartWarForJBoss510" if="v510">
+		<echo message="Make adjustments to KonaKart WAR files for JBoss v510" />
+		
+		<echo message="Copy jboss-classloading.xml to stage to be usd in the WAR" />
+		<copy file="${custom.home}/../webapps/konakart/WEB-INF/jboss-classloading.xml" 
+		    tofile="${custom.home}/war/stage/konakart/WEB-INF/jboss-classloading.xml"
+		    overwrite="true"/>
+	</target>
+
+	<target name="adjustKonaKartWarForWildfly" if="forWildfly">
+		<echo message="Make adjustments to files for the KonaKart WAR files for Wildfly" />
+	
+		<copy file="${custom.home}/war/stage/konakart/WEB-INF/wildfly-deployment-structure.xml"
+         	tofile="${custom.home}/war/stage/konakart/WEB-INF/jboss-deployment-structure.xml" 
+			overwrite="true"/>
+			
+		<echo message="Disable JAXWS for Wildfly" />
+		
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt; --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakart/WEB-INF/web.xml"
+		         token='&lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+
+		<!-- Note: Probably not necessary to remove the log4j-web-* jar after Wildfly 9 -->
+		<echo message="Remove webservices-rt-* and log4j-web-*" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/war/stage/konakart/WEB-INF/lib">
+				<include name="webservices-rt-*.jar" />
+				<include name="log4j-web-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustKonaKartWarForGlassfish" if="forGlassfish">
+		<echo message="Make adjustments to files for the KonaKart WAR files for Glassfish" />
+
+		<echo message="Remove log4j-web-*.jar" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/war/stage/konakart/WEB-INF/lib">
+				<include name="log4j-web-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustKonaKartAdminWarForJBoss" if="forJBoss">
+		<echo message="Make adjustments to KonaKartAdmin WAR files for JBoss" />
+
+		<echo message="Disable JAXWS for JBoss" />
+		
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt; --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='&lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+
+		<echo message="Make adjustments for JBoss for konakartadmin WAR" />
+		<echo message="Remove webservices-rt-*" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/war/stage/konakartadmin/WEB-INF/lib">
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+		
+		<antcall target="adjustKonaKartAdminWarForJBoss510" />
+	</target>
+
+	<target name="adjustKonaKartAdminWarForJBoss510" if="v510">
+		<echo message="Make adjustments to KonaKartAdmin WAR files for JBoss v510" />
+		
+		<copy file="${custom.home}/../webapps/konakartadmin/WEB-INF/jboss-classloading.xml"
+         	tofile="${custom.home}/war/stage/konakartadmin/WEB-INF/jboss-classloading.xml" 
+			overwrite="true"/>
+	</target>
+	
+	<target name="adjustKonaKartAdminWarForWildfly" if="forWildfly">
+		<echo message="Make adjustments to files for the KonaKartAdmin WAR files for Wildfly" />
+
+		<echo message="Disable JAXWS for Wildfly" />
+		
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt; --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt;'
+		         value='- JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+		<replace file="${custom.home}/war/stage/konakartadmin/WEB-INF/web.xml"
+		         token='&lt;!-- End of JAX Web Services'
+		         value='End of JAX Web Services' />
+
+		<!-- Note: Probably not necessary to remove the log4j-web-* jar after Wildfly 9 -->
+		<echo message="Remove webservices-rt-* and log4j-web-*" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/war/stage/konakartadmin/WEB-INF/lib">
+				<include name="webservices-rt-*.jar" />
+				<include name="log4j-web-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+	
+	<target name="adjustKonaKartAdminWarForGlassfish" if="forGlassfish">
+		<echo message="Make adjustments to files for the KonaKartAdmin WAR files for Glassfish" />
+
+		<echo message="Remove log4j-web-*.jar" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/war/stage/konakartadmin/WEB-INF/lib">
+				<include name="log4j-web-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="make_ear" depends="make_wars" description="Create the konakart EAR">
+		<mkdir dir="${custom.home}/ear" />
+
+		<echo message="Create konakart.ear" />
+		<ear destfile="./ear/konakart.ear" appxml="../webapps/konakart/WEB-INF/application.xml"
+			manifest="${custom.home}/MANIFEST.MF">
+			<metainf dir="../webapps/konakart/WEB-INF/">
+				<include name="weblogic-application.xml"/>
+			</metainf>
+			<fileset dir="./war">
+				<include name="**/konakart.war" />
+				<include name="**/konakartadmin.war" />
+				<include name="**/birtviewer.war" />
+			</fileset>
+		</ear>
+
+		<echo message="Create exploded version of konakart.ear" />
+		<mkdir dir="${custom.home}/konakart.ear" />
+		<unzip src="${custom.home}/ear/konakart.ear" dest="${custom.home}/konakart.ear/" />
+
+		<move file="${custom.home}/konakart.ear/birtviewer.war"
+		      tofile="${custom.home}/konakart.ear/birtviewer.war.tmp" />
+		<move file="${custom.home}/konakart.ear/konakart.war"
+		      tofile="${custom.home}/konakart.ear/konakart.war.tmp" />
+		<move file="${custom.home}/konakart.ear/konakartadmin.war"
+		      tofile="${custom.home}/konakart.ear/konakartadmin.war.tmp" />
+
+		<unzip src="${custom.home}/konakart.ear/birtviewer.war.tmp"
+		       dest="${custom.home}/konakart.ear/birtviewer.war/" />
+		<unzip src="${custom.home}/konakart.ear/konakart.war.tmp"
+		       dest="${custom.home}/konakart.ear/konakart.war/" />
+		<unzip src="${custom.home}/konakart.ear/konakartadmin.war.tmp"
+		       dest="${custom.home}/konakart.ear/konakartadmin.war/" />
+
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/konakart.ear/">
+				<include name="*.tmp" />
+			</fileset>
+		</delete>
+		
+		<!-- 
+			The purpose of this is to ensure that we load these versions
+		    of the jars.  For weblogic this should match the definitions
+			in weblogic-application.xml
+		-->
+		<mkdir dir="${custom.home}/konakart.ear/lib" />
+		<copy todir="${custom.home}/konakart.ear/lib/">
+			<fileset dir="${custom.home}/konakart.ear/konakart.war/WEB-INF/lib">
+				<include name="commons-lang-2.4.jar"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="clean_liferay_sso_jar"
+	        description="Clean the KonaKart Liferay SSO classes and jar">
+
+		<echo message="Clean the KonaKart Liferay classes and SSO jar" />
+
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${liferaysso.home}/${KKPortalVersion}/classes"/>
+			<fileset dir="${liferaysso.home}/jar"/>
+		</delete>
+	</target>
+	
+	<target name="make_liferay_sso_jar"
+	        depends="clean_liferay_sso_jar"
+	        description="Create the KonaKart Liferay SSO jar"
+			if="liferaysso.${KKPortalVersion}.code.present">
+
+		<mkdir dir="${liferaysso.home}/${KKPortalVersion}/classes" />
+		<mkdir dir="${liferaysso.home}/jar" />
+		
+		<echo message="Compile the KonaKart Liferay SSO sources - Portal v${KKPortalVersion} code present" />
+
+		<javac srcdir="${liferaysso.home}/${KKPortalVersion}/src/"
+		       destdir="${liferaysso.home}/${KKPortalVersion}/classes"
+		       debug="true"
+		       encoding="UTF-8"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java">
+			<classpath refid="liferaysso.compile.path" />
+		</javac>
+		
+		<echo message="Create the KonaKart Liferay SSO jar" />		
+		
+		<jar destfile="${liferaysso.home}/jar/konakart_liferaysso-${konakart.version}.jar"
+			manifest="${custom.home}/MANIFEST.MF">
+			<fileset dir="${liferaysso.home}/${KKPortalVersion}/classes">
+				<include name="**/*.class" />
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="make_liferay_portlet_wars"
+	        depends="make_liferay_portlet_war, make_admin_liferay_portlet_war"
+	        description="Create the KonaKart and KonaKartAdmin portlet wars for Liferay">
+
+		<echo message="Create the Struts-2 KonaKart portlet war and the KonaKartAdmin war for Liferay" />
+	</target>
+	
+	<target name="make_liferay_portlet_war"
+	        depends="clean_portlet_war, make_liferay_sso_jar, LiferayVersionWarningVersion8"
+	        description="Create the KonaKart portlet war for Liferay">
+
+		<echo message="Create the Struts-2 KonaKart portlet war for Liferay" />
+		
+		<mkdir dir="${custom.home}/portlet_war" />
+		<mkdir dir="${custom.home}/konakart_portlet/stage/konakart" />
+		<mkdir dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/jsp" />
+		<mkdir dir="${liferaysso.home}/jar" />
+
+		<echo message="Lay out the WAR in the staging area" />
+		<echo message="Copy (almost) the whole konakart webapp to staging area" />
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/" overwrite="true">
+			<fileset dir="${konakart.dir}">
+				<exclude name="**/struts-1.2.9.jar" />
+				<exclude name="**/*.jsp" />
+				<exclude name="**/web.xml" />
+				<exclude name="**/struts-config.xml" />
+				<exclude name="images/**/*" />
+				<exclude name="images" />
+			</fileset>
+		</copy>
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib" overwrite="true">
+			<fileset dir="${liferaysso.home}/jar">
+				<include name="konakart_liferaysso-${konakart.version}.jar" />
+			</fileset>
+		</copy>
+
+		<echo message="Copy the konakart images to a new directory under konakart in the staging area" />
+		<mkdir dir="${custom.home}/konakart_portlet/stage/konakart/konakart/images" />
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/konakart/images" overwrite="true">
+			<fileset dir="${konakart.dir}/images">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+
+		<echo message="Create the web.xml for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="webxml" />
+			<arg value="-i" />
+			<arg value="./konakart_portlet/liferay_struts2/${LRDIR}/web.xml.template" />
+			<arg value="-i2" />
+			<arg value="${konakart.dir}/WEB-INF/web.xml" />
+			<arg value="-o" />
+			<arg value="./konakart_portlet/liferay_struts2/${LRDIR}/web.xml" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Copy the config files reqd for the portlet to staging area" />
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/" overwrite="true">
+			<fileset dir="./konakart_portlet/liferay_struts2/${LRDIR}">
+				<include name="*.xml" />
+				<include name="*.properties" />
+			</fileset>
+		</copy>
+		
+		<echo message="Copy the tld files to the WEB-INF/tld directory" />
+		<mkdir dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/tld" />
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/tld" overwrite="true">
+			<fileset dir="${konakart.dir}/WEB-INF">
+				<include name="*.tld" />
+			</fileset>
+		</copy>
+
+		<echo message="Filter the jquery.selectboxit CSS to staging area for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="css" />
+			<arg value="-i" />
+			<arg value="${konakart.dir}/styles/jquery.selectboxit.css" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakart_portlet/stage/konakart/styles/jquery.selectboxit.css" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Filter the jcarousel CSS to staging area for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="css" />
+			<arg value="-i" />
+			<arg value="${konakart.dir}/styles/jcarousel.css" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakart_portlet/stage/konakart/styles/jcarousel.css" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Filter the kk-style CSS to staging area for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="css" />
+			<arg value="-i" />
+			<arg value="${konakart.dir}/styles/kk-style.css" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakart_portlet/stage/konakart/styles/kk-style.css" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Filter the JSPs to staging area for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="jsp" />
+			<arg value="-i" />
+			<arg value="${konakart.dir}/WEB-INF/jsp" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/jsp" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Filter the struts.xml to staging area for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="strutsconfig" />
+			<arg value="-i" />
+			<arg value="${konakart.dir}/WEB-INF/classes/struts.xml" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts.xml" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Filter the struts-common.xml to staging area for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="strutsconfig" />
+			<arg value="-i" />
+			<arg value="${konakart.dir}/WEB-INF/classes/struts-common.xml" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts-common.xml" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Filter the struts-b2b.xml to staging area for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="strutsconfig" />
+			<arg value="-i" />
+			<arg value="${konakart.dir}/WEB-INF/classes/struts-b2b.xml" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts-b2b.xml" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+		
+		<echo message="Copy any JSP files reqd for the portlet to staging area" />
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/" overwrite="true">
+			<fileset dir="./konakart_portlet/liferay_struts2/${LRDIR}">
+				<include name="jsp/*.jsp" />
+			</fileset>
+		</copy>
+
+		<!-- Do not show Cookie warning in the Application Portlet -->
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/jsp/Search.jsp"
+	         token="boolean showCookieWarning = !kkEng.isAgreedCookies()"
+	         value="boolean showCookieWarning = false" />
+
+		<!-- Special actions for adjusting the App Portlet contents -->
+		<antcall target="adjustAppPortlet" />
+
+		<!-- Create the portlet WAR file -->
+
+		<echo message="Create portlet konakart.war" />
+		<war destfile="./portlet_war/konakart.war"
+		     webxml="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/web.xml"
+			manifest="${custom.home}/MANIFEST.MF">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/">
+				<include name="**/*" />
+				<exclude name="**/web.xml" />
+				<exclude name="**/Thumbs.db" />
+			</fileset>
+		</war>
+	</target>
+
+	<target name="adjustAppPortlet">
+		<echo message="Make adjustments to the App Portlet" />
+		<antcall target="adjustAppPortletForLR" />
+		<antcall target="adjustAppPortletForLR605" />
+		<antcall target="adjustAppPortletForLR606" />
+		<antcall target="adjustAppPortletForLR610" />
+		<antcall target="adjustAppPortletForLR611" />
+		<antcall target="adjustAppPortletForLR6120" />
+		<antcall target="adjustAppPortletforLR62" />
+		<antcall target="adjustAppPortletforLR7" />
+		<antcall target="adjustAppPortletForAXIS" />
+		<antcall target="adjustAppPortletForJBoss" />
+		<antcall target="adjustAppPortletForJBossLiferay" />
+		<antcall target="adjustAppPortletForJBossLiferay606" />
+		<antcall target="adjustAppPortletForJBossLiferay610" />
+		<antcall target="adjustAppPortletForJBossLiferay611" />
+		<antcall target="adjustAppPortletForJBossLiferay6120" />
+		<antcall target="adjustAppPortletforJBossLiferay62" />
+		<antcall target="adjustAppPortletforWildflyLiferay" />
+		<antcall target="adjustAppPortletForKKDemoSite" />
+	</target>
+	
+	<target name="adjustAppPortletForKKDemoSite" if="forKKDemoSite">
+		<!-- Creates a Portlet that acts as a client to the KonaKart Store at konakart.com -->
+		
+		<echo message="Make adjustments to Application Portlet WAR for pointing at the KKDemo Site" />
+
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_app.properties"
+		         token="konakart.app.engineclass=com.konakart.app.KKEng"
+		         value="#konakart.app.engineclass=com.konakart.app.KKEng" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_app.properties"
+		         token="#konakart.app.engineclass=com.konakart.json.KKJSONEng"
+		         value="konakart.app.engineclass=com.konakart.json.KKJSONEng" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_app.properties"
+		         token="#konakart.app.engineclass=com.konakart.json.KKJSONEng"
+		         value="konakart.app.engineclass=com.konakart.json.KKJSONEng" />
+
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_app.properties"
+		         token="#konakart.app.main.page.hide.recently.viewed=true"
+		         value="konakart.app.main.page.hide.recently.viewed=true" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_app.properties"
+		         token="#konakart.app.main.page.hide.banner.row2=true"
+		         value="konakart.app.main.page.hide.banner.row2=true" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_app.properties"
+		         token="#konakart.app.category.page.hide.banner.row2=true"
+		         value="konakart.app.category.page.hide.banner.row2=true" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_app.properties"
+		         token="#konakart.app.dont.set.portlet.context.path=true"
+		         value="konakart.app.dont.set.portlet.context.path=true" />
+
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart_axis_client.properties"
+		         token="http://localhost:${defaultPort}"
+		         value="http://www.konakart.com" />
+
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"
+		         token="konakart.json.engine.url = http://localhost:${defaultPort}/konakart/konakartjson"
+		         value="konakart.json.engine.url = http://www.konakart.com/konakart/konakartjson" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"
+		         token="konakart.json.engine.url = http://localhost:8890/konakart/konakartjson"
+		         value="konakart.json.engine.url = http://www.konakart.com/konakart/konakartjson" />
+
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"
+		         token="konakart.engineMode             = 1"
+		         value="konakart.engineMode             = 0" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"
+		         token="konakart.engineMode             = 2"
+		         value="konakart.engineMode             = 0" />
+
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"
+		         token="konakart.customersShared        = true"
+		         value="konakart.customersShared        = false" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"
+		         token="konakart.productsShared         = true"
+		         value="konakart.productsShared         = false" />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"
+		         token="konakart.categoriesShared       = true"
+		         value="konakart.categoriesShared       = false" />
+
+		<echo message="We don't need any torque references"/>
+		<copy tofile="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties.temp" 
+		        file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties"/>
+		<copy tofile="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties" 
+		        file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart.properties.temp">
+            <filterchain>
+                <linecontains negate="true">
+                    <contains value="torque."/>
+                </linecontains>
+            </filterchain>
+        </copy>
+
+		<echo message="Comment out Enterprise references in Struts.xml"/>
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts.xml"
+		         token='- PayUMoney start --&gt;'
+		         value='- PayUMoney start' />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts.xml"
+		         token='&lt;!-- PayUMoney end'
+		         value='PayUMoney end' />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts.xml"
+		         token='- PunchOut --&gt;'
+		         value='- PunchOut' />
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts.xml"
+		         token='&lt;!-- End of PunchOut'
+		         value='End of PunchOut' />
+
+		<!-- Remove the inclusion of the B2B struts file -->
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/struts.xml"
+		         token='&lt;include file="struts-b2b.xml"&gt;&lt;/include&gt;'
+		         value='' />
+
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes">
+				<include name="konakart.properties.temp" />
+				<include name="konakart.properties.bak1" />
+				<include name="konakart-8.8.1.0.properties" />
+				<include name="ehcache.xsd" />
+				<include name="konakart_ehcache.xml" />
+			</fileset>
+		</delete>
+
+		<delete failonerror="false">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/">
+				<include name="liferay-plugin-package.xml" />
+			</fileset>
+		</delete>
+
+		<echo message="Remove miscellaneous files that aren't required" />
+		<delete failonerror="false" includeEmptyDirs="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/shoppingWidgets" />
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/konakart/images/banners" />
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/konakart/images/content" />
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/konakart/images/manufacturer" />
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/konakart/images/prod" />
+		</delete>
+
+		<echo message="Remove jars that aren't required" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="mysql*.jar" />
+				<include name="jtds*.jar" />
+				<include name="ojdbc*.jar" />
+				<include name="postgresql*.jar" />
+
+				<!--
+				<include name="commons-fileupload-*.jar" />
+				-->
+				<include name="activemq-*.jar" />
+				<include name="core-renderer*.jar" />
+				<include name="iText-*.jar" />
+				<include name="jcs-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="FedTaxApi.jar" />
+				<include name="velocity-*.jar" />
+
+                <include name="ehcache*.jar" />
+				<include name="konakart_customEE-*.jar" />
+				<include name="konakart_enterprise-*.jar" />
+				<include name="konakart_jaxws-*.jar" />
+				<include name="konakart_multistore-*.jar" />
+				<include name="konakart_others_facebooklogin-*.jar" />
+				<include name="konakart_others_googlepluslogin-*.jar" />
+				<include name="konakart_others_ldap-*.jar" />
+				<include name="konakart_others_uspsaddrval-*.jar" />
+				<include name="konakart_solr-*.jar" />
+				
+				<include name="konakartadmin_batch-*.jar" />
+				<include name="konakartadmin_customEE-*.jar" />
+				<include name="konakartadmin_enterprise-*.jar" />
+				<include name="konakartadmin_jaxws-*.jar" />
+				<include name="konakartadmin_multistore-*.jar" />
+				<include name="konakartadmin_solr-*.jar" />
+				
+				<include name="konakartadmin_enterprise-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="LiferayVersionWarningVersion8" if="KKPortalVersion8">
+		<echo message="WARNING: Liferay 8 NOT SUPPORTED" />
+	</target>
+
+	<target name="adjustAppPortletForLR" >
+		<echo message="Make adjustments to the Struts-2 Application Portlet WAR for Liferay" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="portlet.jar" />
+			</fileset>
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF">
+				<include name="sun-jaxws.xml" />
+			</fileset>
+		</delete>
+		
+		<!-- Set debugging to INFO for the Storefront Portlet - change/remove this as you require -->
+		
+		<replace file="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes/konakart-logging.xml"
+		         token='log4j.logger.com.konakart                     = WARN'
+		         value='log4j.logger.com.konakart                     = INFO' />
+	</target>
+	
+	<target name="adjustAppPortletForLR605" if="forLR605">
+		<echo message="Make adjustments to Application Portlet WAR for Liferay 6.0.5" />
+		<!-- Remove Liferay SSOLogin jar when using LR 6.0.5 -->
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="konakart_liferaysso-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletForLR606" if="forLR606">
+		<echo message="Make adjustments to Application Portlet WAR for Liferay 6.0.6" />
+		<!-- Remove Liferay SSOLogin jar when using LR 6.0.6 -->
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="konakart_liferaysso-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletForLR610" if="forLR610">
+		<echo message="Make adjustments to Application Portlet WAR for Liferay 6.1.0" />
+		<!-- Remove Liferay SSOLogin jar when using LR 6.1.0 -->
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="konakart_liferaysso-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletForLR611" if="forLR611">
+		<echo message="Make adjustments to Application Portlet WAR for Liferay 6.1.1" />
+	</target>
+
+	<target name="adjustAppPortletForLR6120" if="forLR6120">
+		<echo message="Make adjustments to Application Portlet WAR for Liferay 6.1.20" />
+	</target>
+
+	<target name="adjustAppPortletforLR62" if="forLR62">
+		<echo message="Make adjustments to Application Portlet WAR for Liferay 6.2" />
+		<!-- Remove ehCaching when using LR 6.2 -->
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes">
+				<include name="konakart_ehcache.xml" />
+				<include name="ehcache.xsd" />
+			</fileset>
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="ehcache*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletforLR7" if="forLR7">
+		<echo message="Make adjustments to Application Portlet WAR for Liferay 7" />
+		<!-- Remove ehCaching and conflicting jars -->
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes">
+				<include name="konakart_ehcache.xml" />
+				<include name="ehcache.xsd" />
+			</fileset>
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="activation-*.jar" />
+				<include name="ehcache*.jar" />
+				<include name="javax.mail-api-*.jar" />
+				<include name="javax.servlet.jsp-api-*.jar" />
+				<include name="log4j-web-*.jar" />
+				<include name="xml-apis-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletForAXIS" if="excludeAXIS">
+		<echo message="Make adjustments to Application Portlet WAR to exclude AXIS" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/">
+				<include name="*.wsdd" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletForJBoss" if="forJBoss">
+		<echo message="Make adjustments to Application Portlet WAR for JBoss" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="jsr311-api-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletForJBossLiferay" if="forJBossLiferay">
+		<echo message="Make adjustments to Application Portlet WAR for JBoss-Liferay" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="jsr311-api-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAppPortletForJBossLiferay606" if="forJBossLiferay606">
+		<echo message="Make adjustments to Application Portlet WAR for JBoss-Liferay-606" />
+
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/classes">
+				<include name="ehcache.xsd" />
+				<include name="konakart_ehcache.xml" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+		
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/" overwrite="true">
+			<fileset dir="${custom.home}/konakart_portlet/liferayJBoss/6.0.6/konakart/" />
+		</copy>
+	</target>
+
+	<target name="adjustAppPortletForJBossLiferay610" if="forJBossLiferay610">
+		<echo message="Make adjustments to Application Portlet WAR for JBoss-Liferay-610" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="jsr311-api-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/" overwrite="true">
+			<fileset dir="${custom.home}/konakart_portlet/liferayJBoss/6.1.0/konakart/" />
+		</copy>
+	</target>
+
+	<target name="adjustAppPortletForJBossLiferay611" if="forJBossLiferay611">
+		<echo message="Make adjustments to Application Portlet WAR for JBoss-Liferay-6.1.1" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="jsr311-api-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/" overwrite="true">
+			<fileset dir="${custom.home}/konakart_portlet/liferayJBoss/6.1.1/konakart/" />
+		</copy>
+	</target>
+
+	<target name="adjustAppPortletForJBossLiferay6120" if="forJBossLiferay6120">
+		<echo message="Make adjustments to Application Portlet WAR for JBoss-Liferay-6.1.20" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="jsr311-api-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/" overwrite="true">
+			<fileset dir="${custom.home}/konakart_portlet/liferayJBoss/6.1.20/konakart/" />
+		</copy>
+	</target>
+
+	<target name="adjustAppPortletforJBossLiferay62" if="forJBossLiferay62">
+		<echo message="Make adjustments to Application Portlet WAR for JBoss-Liferay-6.2" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="jsr311-api-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/" overwrite="true">
+			<fileset dir="${custom.home}/konakart_portlet/liferayJBoss/6.2.0/konakart/" />
+		</copy>
+	</target>
+
+	<target name="adjustAppPortletforWildflyLiferay" if="forWildflyLiferay">
+		<echo message="Make adjustments to Application Portlet WAR for Wildfly-Liferay" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakart_portlet/stage/konakart/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jersey-bundle-*.jar" />
+				<include name="jsr311-api-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+		<copy todir="${custom.home}/konakart_portlet/stage/konakart/" overwrite="true">
+			<fileset dir="${custom.home}/konakart_portlet/liferayWildfly/${LRDIR}/konakart/" />
+		</copy>
+	</target>
+
+	<target name="make_admin_liferay_portlet_war"
+	        depends="clean_admin_portlet_war, LiferayVersionWarningVersion8"
+	        description="Create the konakartadmin portlet war for Liferay">
+		<mkdir dir="${custom.home}/admin_portlet_war" />
+
+		<echo message="Lay out the WAR in the staging area" />
+
+		<!-- unzip jar to put classes under the classes directory     -->
+		<!-- Required in Community Edition when source isn't provided -->
+		
+		<unzip src="./konakartadmin_portlet/liferay/${KKPortalVersion}/WEB-INF/lib/konakartadmin_liferay-${konakart.version}.jar" 
+				dest="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes" />
+
+		<!-- Now compile the Liferay Portlet utilities to classes -->
+		
+		<antcall target="compile_admin_portlet_liferay" />
+
+		<!-- Now copy these new classes to the staging area -->
+		
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes"
+				includeEmptyDirs="No">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferay/${KKPortalVersion}/classes">
+				<include name="**/*.class" />
+			</fileset>
+		</copy>
+		
+		<!-- We don't want the META-INF directory or the COMMUNITY-LICENSE -->
+		
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/META-INF" />
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes">
+				<include name="COMMUNITY-LICENSE.txt" />
+			</fileset>
+		</delete>
+		
+		<!-- Copy (almost) the whole konakartadmin webapp to staging area" -->
+		
+		<antcall target="copy_admin_portlet_liferay_to_stage" />
+
+		<!-- Set debugging to INFO for the Admin Portlet - change/remove this as you require -->
+ 
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakart-logging.xml"
+		         token='com.konakartadmin" level="WARN'
+		         value='com.konakartadmin" level="INFO' />
+
+		<unCommentInXml file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakart-logging.xml"
+		         sectionName="Admin Server"/>
+				 
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakart-logging.xml"
+		         token='com.konakartadmin.server" level="WARN'
+		         value='com.konakartadmin.server" level="DEBUG' />
+		
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakart-logging.xml"
+		         token='com.konakartadmin.server" level="INFO'
+		         value='com.konakartadmin.server" level="WARN' />
+
+		<unCommentInXml file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakart-logging.xml"
+		         sectionName="Admin Portlet"/>
+
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakart-logging.xml"
+		         token='com.konakartadmin.portlet" level="WARN'
+		         value='com.konakartadmin.portlet" level="DEBUG' />
+		
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakart-logging.xml"
+		         token='com.konakartadmin.portlet" level="INFO'
+		         value='com.konakartadmin.portlet" level="DEBUG' />
+
+		<unCommentInXml file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/log4j2.xml"
+		         sectionName="Admin Server"/>
+		
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/log4j2.xml"
+		         token='com.konakartadmin.server" level="WARN'
+		         value='com.konakartadmin.server" level="DEBUG' />
+
+		<unCommentInXml file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/log4j2.xml"
+		         sectionName="Admin Portlet"/>
+
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/log4j2.xml"
+		         token='com.konakartadmin.portlet" level="WARN'
+		         value='com.konakartadmin.portlet" level="DEBUG' />
+
+		<!-- Special actions for LR605, LR606, LR611, AXIS, JBoss and JBoss-Liferay-->
+
+		<antcall target="adjustAdminPortletForLR605" />
+		<antcall target="adjustAdminPortletForLR606" />
+		<antcall target="adjustAdminPortletForLR610" />
+		<antcall target="adjustAdminPortletForLR611" />
+		<antcall target="adjustAdminPortletForLR6120" />
+		<antcall target="adjustAdminPortletforLR62" />
+		<antcall target="adjustAdminPortletforLR7" />
+		<antcall target="adjustAdminPortletForAXIS" />
+		<antcall target="adjustAdminPortletForJBoss" />
+		<antcall target="adjustAdminPortletForJBossLiferay" />
+		<antcall target="adjustAdminPortletForJBossLiferay606" />
+		<antcall target="adjustAdminPortletForJBossLiferay610" />
+		<antcall target="adjustAdminPortletForJBossLiferay611" />
+		<antcall target="adjustAdminPortletForJBossLiferay6120" />
+		<antcall target="adjustAdminPortletforJBossLiferay62" />
+		<antcall target="adjustAdminPortletforWildflyLiferay" />
+		
+		<antcall target="adjustAdminPortletforPortalVersion6" />
+		<antcall target="adjustAdminPortletforPortalVersion7" />
+
+		<!-- Create portlet konakartadmin.war" -->
+		
+		<war destfile="./admin_portlet_war/konakartadmin.war"
+		     webxml="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/web.xml"
+			manifest="${custom.home}/MANIFEST.MF">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/">
+				<include name="**/*" />
+				<exclude name="**/web.xml" />
+				<exclude name="**/Thumbs.db" />
+			</fileset>
+		</war>
+	</target>
+
+	<target name="adjustAdminPortletforPortalVersion6" if="KKPortalVersion6">
+		<echo message="Modify the Javascript files for the Admin portlet for ${KKPortalVersion}" />
+		<echo message="Modify the konakartadmin.nocache file for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="kkadminjs" />
+			<arg value="-i" />
+			<arg value="${konakartadmin.dir}/konakartadmin.nocache.${konakart.version}.${konakart.revision}.js" />
+			<arg value="-i2" />
+			<arg value="${konakartadmin.dir}/compilation-mappings.txt" />
+			<arg value="-i3" />
+			<arg value="/../../konakartadmin/" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakartadmin_portlet/stage/konakartadmin/konakartadmin.nocache.${konakart.version}.${konakart.revision}.js" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Modify the konakartadmin browser-specific Javascript files for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="kkadmninBrowserJS" />
+			<arg value="-i" />
+			<arg value="${custom.home}/konakartadmin_portlet/stage/konakartadmin" />
+			<arg value="-i2" />
+			<arg value="${konakartadmin.dir}/compilation-mappings.txt" />
+			<arg value="-i3" />
+			<arg value="clear.cache.gif" />
+			<arg value="-i4" />
+			<arg value="../../konakartadmin/clear.cache.gif" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+	</target>
+
+	<target name="adjustAdminPortletforPortalVersion7" if="KKPortalVersion7">
+		<echo message="Modify the Javascript files for the Admin portlet for ${KKPortalVersion}" />
+		<echo message="Modify the konakartadmin.nocache file for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="kkadminjs" />
+			<arg value="-i" />
+			<arg value="${konakartadmin.dir}/konakartadmin.nocache.${konakart.version}.${konakart.revision}.js" />
+			<arg value="-i2" />
+			<arg value="${konakartadmin.dir}/compilation-mappings.txt" />
+			<arg value="-i3" />
+			<arg value="/../../o/konakartadmin/" />
+			<arg value="-o" />
+			<arg value="${custom.home}/konakartadmin_portlet/stage/konakartadmin/konakartadmin.nocache.${konakart.version}.${konakart.revision}.js" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+
+		<echo message="Modify the konakartadmin browser-specific Javascript files for the portlet WAR" />
+		<java classname="com.dsdata.util.PortalBuildUtilsStruts2"
+		      fork="false"
+		      failonerror="true"
+		      timeout="20000">
+			<arg value="kkadmninBrowserJS" />
+			<arg value="-i" />
+			<arg value="${custom.home}/konakartadmin_portlet/stage/konakartadmin" />
+			<arg value="-i2" />
+			<arg value="${konakartadmin.dir}/compilation-mappings.txt" />
+			<arg value="-i3" />
+			<arg value="clear.cache.gif" />
+			<arg value="-i4" />
+			<arg value="../../o/konakartadmin/clear.cache.gif" />
+			<classpath refid="konakart.portlet.build.utils" />
+		</java>
+	</target>
+
+	<target name="copy_admin_portlet_liferay_to_stage">
+		<echo message="Copy Admin Application Portlet for Liferay v${KKPortalVersion} to Staging area" />
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/"
+				includeEmptyDirs="No">
+			<fileset dir="${konakartadmin.dir}">
+				<exclude name="**/web.xml" />
+				<exclude name="**/sun-jaxws.xml" />
+				<exclude name="**/KonakartAdmin.css" />
+			</fileset>
+		</copy>
+
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/"
+				includeEmptyDirs="No">
+			<fileset dir="./konakartadmin_portlet/liferay/${KKPortalVersion}">
+				<include name="**/*.xml" />
+				<include name="**/*.properties" />
+				<include name="**/*.jar" />
+				<include name="**/icon.png" />
+				<exclude name="ant" />
+				<exclude name="ant/*.xml" />
+				<exclude name="**/src/**/*" />
+				<exclude name="**/KonakartAdmin.css" />
+				<exclude name="**/konakartadmin_liferay-${konakart.version}.jar" />
+				<exclude name="**/konakartadmin_portlet.properties" />
+			</fileset>
+			<fileset dir="./konakartadmin_portlet/liferay/${KKPortalVersion}/css" />
+		</copy>
+		
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes">
+			<fileset dir="./konakartadmin_portlet/liferay/${KKPortalVersion}/src">
+				<include name="konakartadmin_portlet.properties" />
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="adjustAdminPortletForLR605" if="forLR605">
+		<echo message="Make adjustments to Admin Application Portlet WAR for Liferay 6.0.5" />
+		<antcall target="adjustAdminPortletRemovePortletJars" />
+	</target>
+
+	<target name="adjustAdminPortletForLR606" if="forLR606">
+		<echo message="Make adjustments to Admin Application Portlet WAR for Liferay 6.0.6" />
+		<antcall target="adjustAdminPortletRemovePortletJars" />
+	</target>
+
+	<target name="adjustAdminPortletForLR610" if="forLR610">
+		<echo message="Make adjustments to Admin Application Portlet WAR for Liferay 6.1.0" />
+		<antcall target="adjustAdminPortletRemovePortletJars" />
+	</target>
+
+	<target name="adjustAdminPortletForLR611" if="forLR611">
+		<echo message="Make adjustments to Admin Application Portlet WAR for Liferay 6.1.1" />
+		<antcall target="adjustAdminPortletRemovePortletJars" />
+	</target>
+
+	<target name="adjustAdminPortletForLR6120" if="forLR6120">
+		<echo message="Make adjustments to Admin Application Portlet WAR for Liferay 6.1.20" />
+		<antcall target="adjustAdminPortletRemovePortletJars" />
+	</target>
+
+	<target name="adjustAdminPortletforLR62" if="forLR62">
+		<echo message="Make adjustments to Admin Application Portlet WAR for Liferay 6.2" />
+		<antcall target="adjustAdminPortletRemovePortletJars" />
+	</target>
+
+	<target name="adjustAdminPortletforLR7" if="forLR7">
+		<echo message="Make adjustments to Admin Application Portlet WAR for Liferay 7" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="activation-*.jar" />
+				<include name="javax.mail-api-*.jar" />
+				<include name="log4j-web-*.jar" />
+				<include name="xml-apis-*.jar" />
+			</fileset>
+		</delete>
+		<antcall target="adjustAdminPortletRemovePortletJars" />
+	</target>
+
+	<target name="adjustAdminPortletRemovePortletJars">
+		<echo message="Remove Portlet Jars from Admin Application Portlet WAR for Liferay" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAdminPortletForAXIS" if="excludeAXIS">
+		<echo message="Make adjustments to Admin Application Portlet WAR to exclude AXIS" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/">
+				<include name="*.wsdd" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="adjustAdminPortletForJBoss" if="forJBoss">
+		<echo message="Make adjustments for JBoss" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="webservices-rt-*.jar" />
+			</fileset>
+		</delete>
+	</target>
+	
+	<target name="adjustAdminPortletForJBossLiferay" if="forJBossLiferay">
+		<echo message="Make adjustments for JBoss-Liferay" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+				<include name="activation-*.jar" />
+				<include name="javax.mail-*.jar" />
+				<include name="quartz-*.jar" />
+				<include name="commons-logging-*.jar" />
+				<include name="axis-jaxrpc-*.jar" />
+				<include name="webservices-rt-*.jar" />
+				
+				<!-- Adjust these to suit your own environment -->
+				<!--
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="postgre*.jar" />
+				<include name="ojdbc*.jar" />
+				-->
+			</fileset>
+		</delete>
+		
+		<!-- Set a very high session timeout if you use SSO in Liferay -->
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakartadmin.properties"
+		         token='konakart.session.durationMinutes=30'
+		         value='konakart.session.durationMinutes=10080' />
+	</target>
+	
+	<target name="adjustAdminPortletForJBossLiferay606" if="forJBossLiferay606">
+		<echo message="Make adjustments for JBoss-Liferay-606" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+				<include name="activation-*.jar" />
+				<include name="javax.mail-*.jar" />
+				<include name="quartz-*.jar" />
+				<include name="commons-logging-*.jar" />
+				<include name="axis-jaxrpc-*.jar" />
+				<include name="webservices-rt-*.jar" />
+
+				<!-- Adjust these to suit your own environment -->
+				<!--
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="postgre*.jar" />
+				<include name="ojdbc*.jar" />
+				-->
+			</fileset>
+		</delete>
+		
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/" overwrite="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferayJBoss/6.0.6/konakartadmin/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+
+		<!-- Set a very high session timeout if you use SSO in Liferay -->
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakartadmin.properties"
+		         token='konakart.session.durationMinutes=30'
+		         value='konakart.session.durationMinutes=10080' />
+	</target>
+
+	<target name="adjustAdminPortletForJBossLiferay610" if="forJBossLiferay610">
+		<echo message="Make adjustments for JBoss-Liferay-610" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+				<include name="activation-*.jar" />
+				<include name="javax.mail-*.jar" />
+				<include name="quartz-*.jar" />
+				<include name="axis-jaxrpc-*.jar" />
+				<include name="webservices-rt-*.jar" />
+
+				<!-- Adjust these to suit your own environment -->
+				<!--
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="postgre*.jar" />
+				<include name="ojdbc*.jar" />
+				-->
+			</fileset>
+		</delete>
+
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/" overwrite="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferayJBoss/6.1.0/konakartadmin/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		
+		<!-- Set a very high session timeout if you use SSO in Liferay -->
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakartadmin.properties"
+		         token='konakart.session.durationMinutes=30'
+		         value='konakart.session.durationMinutes=10080' />
+	</target>
+
+	<target name="adjustAdminPortletForJBossLiferay611" if="forJBossLiferay611">
+		<echo message="Make adjustments for JBoss-Liferay-611" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+				<include name="activation-*.jar" />
+				<include name="javax.mail-*.jar" />
+				<include name="quartz-*.jar" />
+				<include name="commons-logging-*.jar" />
+				<include name="axis-jaxrpc-*.jar" />
+				<include name="webservices-rt-*.jar" />
+
+				<!-- Adjust these to suit your own environment -->
+				<!--
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="postgre*.jar" />
+				<include name="ojdbc*.jar" />
+				-->
+			</fileset>
+		</delete>
+
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/" overwrite="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferayJBoss/6.1.1/konakartadmin/" >
+				<include name="**/*" />
+			</fileset>
+		</copy>
+
+		<!-- Set a very high session timeout if you use SSO in Liferay -->
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakartadmin.properties"
+		         token='konakart.session.durationMinutes=30'
+		         value='konakart.session.durationMinutes=10080' />
+	</target>
+
+	<target name="adjustAdminPortletForJBossLiferay6120" if="forJBossLiferay6120">
+		<echo message="Make adjustments for JBoss-Liferay-6.1.20" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+				<include name="activation-*.jar" />
+				<include name="javax.mail-*.jar" />
+				<include name="quartz-*.jar" />
+				<include name="commons-logging-*.jar" />
+				<include name="axis-jaxrpc-*.jar" />
+				<include name="webservices-rt-*.jar" />
+
+				<!-- Adjust these to suit your own environment -->
+				<!--
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="postgre*.jar" />
+				<include name="ojdbc*.jar" />
+				-->
+			</fileset>
+		</delete>
+
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/" overwrite="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferayJBoss/6.1.20/konakartadmin/" >
+				<include name="**/*" />
+			</fileset>
+		</copy>
+
+		<!-- Set a very high session timeout if you use SSO in Liferay -->
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakartadmin.properties"
+		         token='konakart.session.durationMinutes=30'
+		         value='konakart.session.durationMinutes=10080' />
+	</target>
+
+	<target name="adjustAdminPortletforJBossLiferay62" if="forJBossLiferay62">
+		<echo message="Make adjustments for JBoss-Liferay-6.2" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+				<include name="activation-*.jar" />
+				<include name="javax.mail-*.jar" />
+				<include name="quartz-*.jar" />
+				<include name="commons-logging-*.jar" />
+				<include name="axis-jaxrpc-*.jar" />
+				<include name="webservices-rt-*.jar" />
+
+				<!-- Adjust these to suit your own environment -->
+				<!--
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="postgre*.jar" />
+				<include name="ojdbc*.jar" />
+				-->
+			</fileset>
+		</delete>
+
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/" overwrite="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferayJBoss/6.2.0/konakartadmin/" >
+				<include name="**/*" />
+			</fileset>
+		</copy>
+
+		<!-- Set a very high session timeout if you use SSO in Liferay -->
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakartadmin.properties"
+		         token='konakart.session.durationMinutes=30'
+		         value='konakart.session.durationMinutes=10080' />
+	</target>
+
+	<target name="adjustAdminPortletforWildflyLiferay" if="forWildflyLiferay">
+		<echo message="Make adjustments for Wildfly-Liferay" />
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/lib">
+				<include name="xercesImpl-*.jar" />
+				<include name="xml-apis-*.jar" />
+				<include name="jaxb-api-*.jar" />
+				<include name="jaxb-impl-*.jar" />
+				<include name="portal-kernel.jar" />
+				<include name="portal-service.jar" />
+				<include name="portlet.jar" />
+				<include name="activation-*.jar" />
+				<include name="javax.mail-*.jar" />
+				<include name="quartz-*.jar" />
+				<include name="commons-logging-*.jar" />
+				<include name="axis-jaxrpc-*.jar" />
+				<include name="webservices-rt-*.jar" />
+
+				<!-- Adjust these to suit your own environment -->
+				<!--
+				<include name="db2*.jar" />
+				<include name="jtds*.jar" />
+				<include name="postgre*.jar" />
+				<include name="ojdbc*.jar" />
+				-->
+			</fileset>
+		</delete>
+
+		<copy todir="${custom.home}/konakartadmin_portlet/stage/konakartadmin/" overwrite="true">
+			<fileset dir="${custom.home}/konakartadmin_portlet/liferayJBoss/${LRDIR}/konakartadmin/" >
+				<include name="**/*" />
+			</fileset>
+		</copy>
+
+		<!-- Set a very high session timeout if you use SSO in Liferay -->
+		<replace file="${custom.home}/konakartadmin_portlet/stage/konakartadmin/WEB-INF/classes/konakartadmin.properties"
+		         token='konakart.session.durationMinutes=30'
+		         value='konakart.session.durationMinutes=10080' />
+	</target>
+
+	<target name="enableWebServices" description="Enable Web Services in deployed server">
+		<echo message="Allow all methods in WSDD files:" />
+		<replace file="${konakart.dir}/WEB-INF/server-config.wsdd"
+		         token='"allowedMethods" value="none"'
+		         value='"allowedMethods" value="*"' />
+		<replace file="${konakartadmin.dir}/WEB-INF/server-config.wsdd"
+		         token='"allowedMethods" value="none"'
+		         value='"allowedMethods" value="*"' />
+	</target>
+
+	<target name="enable_JAXWS" description="Enable JAX Web Services in konakart web.xml - EE Only">
+		<antcall target="enable_JAXWS_warning" />
+		<antcall target="enable_JAXWS_enterprise" />
+	</target>
+
+	<target name="enable_JAXWS_warning" unless="kk.enterprise.present">
+		<echo message="JAXWS only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_JAXWS_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakart web.xml to start-up JAXWS Server" />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JAX Web Services'
+		         value='- JAX Web Services --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt; --&gt;'
+		         value='- JAX Web Services --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='End of JAX Web Services'
+		         value='&lt;!-- End of JAX Web Services' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAX Web Services'
+		         value='&lt;!-- End of JAX Web Services' />
+				 
+		<echo message="Fix konakart web.xml to start-up JAXWS Storefront Controller" />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JAXWS Storefront Controller'
+		         value='- JAXWS Storefront Controller --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JAXWS Storefront Controller --&gt; --&gt;'
+		         value='- JAXWS Storefront Controller --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='End of JAXWS Storefront Controller'
+		         value='&lt;!-- End of JAXWS Storefront Controller' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAXWS Storefront Controller'
+		         value='&lt;!-- End of JAXWS Storefront Controller' />
+	</target>
+
+	<target name="enable_KKAdmin_JAXWS" description="Enable JAX Web Services in konakartadmin web.xml - EE Only">
+		<antcall target="enable_KKAdmin_JAXWS_warning" />
+		<antcall target="enable_KKAdmin_JAXWS_enterprise" />
+	</target>
+
+	<target name="enable_KKAdmin_JAXWS_warning" unless="kk.enterprise.present">
+		<echo message="JAXWS only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_KKAdmin_JAXWS_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakartadmin web.xml to start-up JAXWS Server" />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JAX Web Services'
+		         value='- JAX Web Services --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JAX Web Services --&gt; --&gt;'
+		         value='- JAX Web Services --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='End of JAX Web Services'
+		         value='&lt;!-- End of JAX Web Services' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAX Web Services'
+		         value='&lt;!-- End of JAX Web Services' />
+				 
+		<echo message="Fix konakartadmin web.xml to start-up JAXWS Admin Controller" />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JAXWS Admin Controller'
+		         value='- JAXWS Admin Controller --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JAXWS Admin Controller --&gt; --&gt;'
+		         value='- JAXWS Admin Controller --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='End of JAXWS Admin Controller'
+		         value='&lt;!-- End of JAXWS Admin Controller' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JAXWS Admin Controller'
+		         value='&lt;!-- End of JAXWS Admin Controller' />
+	</target>
+
+	<target name="enable_ERPIntegration" description="Enable ERP Integration - EE Only">
+		<antcall target="enable_ERPIntegration_warning" />
+		<antcall target="enable_ERPIntegration_enterprise" />
+	</target>
+
+	<target name="enable_ERPIntegration_warning" unless="kk.enterprise.present">
+		<echo message="ERP Integration only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_ERPIntegration_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakartadmin web.xml to start-up ERP Integration" />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- Incoming Message Processor'
+		         value='- Incoming Message Processor --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- Incoming Message Processor --&gt; --&gt;'
+		         value='- Incoming Message Processor --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='End of Incoming Message Processor'
+		         value='&lt;!-- End of Incoming Message Processor' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of Incoming Message Processor'
+		         value='&lt;!-- End of Incoming Message Processor' />
+	</target>
+
+	<target name="enable_JSON" description="Enable JSON in konakart web.xml - EE Only">
+		<antcall target="enable_JSON_warning" />
+		<antcall target="enable_JSON_enterprise" />
+	</target>
+
+	<target name="enable_JSON_warning" unless="kk.enterprise.present">
+		<echo message="JSON only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_JSON_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakart web.xml to start-up JSON" />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JSON Server'
+		         value='- JSON Server --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JSON Server --&gt; --&gt;'
+		         value='- JSON Server --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='End of JSON Server'
+		         value='&lt;!-- End of JSON Server' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JSON Server'
+		         value='&lt;!-- End of JSON Server' />
+	</target>
+
+	<target name="enable_RMI" description="Enable RMI in konakart web.xml - EE Only">
+		<antcall target="enable_RMI_warning" />
+		<antcall target="enable_RMI_enterprise" />
+	</target>
+
+	<target name="enable_RMI_warning" unless="kk.enterprise.present">
+		<echo message="RMI only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_RMI_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakart web.xml to start-up RMI" />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- RMI Server'
+		         value='- RMI Server --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- RMI Server --&gt; --&gt;'
+		         value='- RMI Server --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='End of RMI Server'
+		         value='&lt;!-- End of RMI Server' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of RMI Server'
+		         value='&lt;!-- End of RMI Server' />
+	</target>
+
+	<target name="enable_JSON_CSS" description="Enable JSON Custom Store Service in konakart web.xml - EE Only">
+		<antcall target="enable_JSON_CSS_warning" />
+		<antcall target="enable_JSON_CSS_enterprise" />
+	</target>
+
+	<target name="enable_JSON_CSS_warning" unless="kk.enterprise.present">
+		<echo message="JSON Custom Store Service only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_JSON_CSS_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakart web.xml to start-up JSON Custom Store Service Server" />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Store Service Server'
+		         value='- JSON Custom Store Service Server --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Store Service Server --&gt; --&gt;'
+		         value='- JSON Custom Store Service Server --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='End of JSON Custom Store Service Server'
+		         value='&lt;!-- End of JSON Custom Store Service Server' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JSON Custom Store Service Server'
+		         value='&lt;!-- End of JSON Custom Store Service Server' />
+				 
+		<echo message="Fix konakart web.xml to start-up JSON Custom Store Service Admin" />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Store Service Admin'
+		         value='- JSON Custom Store Service Admin --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Store Service Admin --&gt; --&gt;'
+		         value='- JSON Custom Store Service Admin --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='End of JSON Custom Store Service Admin'
+		         value='&lt;!-- End of JSON Custom Store Service Admin' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JSON Custom Store Service Admin'
+		         value='&lt;!-- End of JSON Custom Store Service Admin' />
+	</target>
+
+	<target name="enable_KKAdmin_JSON" description="Enable KKAdmin JSON in konakartadmin web.xml - EE Only">
+		<antcall target="enable_KKAdmin_JSON_warning" />
+		<antcall target="enable_KKAdmin_JSON_enterprise" />
+	</target>
+
+	<target name="enable_KKAdmin_JSON_warning" unless="kk.enterprise.present">
+		<echo message="KKAdmin JSON only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_KKAdmin_JSON_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakartadmin web.xml to start-up KKAdmin JSON" />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- KKAdmin JSON Server'
+		         value='- KKAdmin JSON Server --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- KKAdmin JSON Server --&gt; --&gt;'
+		         value='- KKAdmin JSON Server --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='End of KKAdmin JSON Server'
+		         value='&lt;!-- End of KKAdmin JSON Server' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of KKAdmin JSON Server'
+		         value='&lt;!-- End of KKAdmin JSON Server' />
+	</target>
+
+	<target name="enable_KKAdmin_RMI" description="Enable KKAdmin RMI in konakartadmin web.xml - EE Only">
+		<antcall target="enable_KKAdmin_RMI_warning" />
+		<antcall target="enable_KKAdmin_RMI_enterprise" />
+	</target>
+
+	<target name="enable_KKAdmin_RMI_warning" unless="kk.enterprise.present">
+		<echo message="KKAdmin RMI only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_KKAdmin_RMI_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakartadmin web.xml to start-up RMI" />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- RMI Server'
+		         value='- RMI Server --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- RMI Server --&gt; --&gt;'
+		         value='- RMI Server --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='End of RMI Server'
+		         value='&lt;!-- End of RMI Server' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of RMI Server'
+		         value='&lt;!-- End of RMI Server' />
+	</target>
+
+	<target name="enable_KonaKart_Messenger" description="Enable KonaKart Messenger in konakart web.xml - EE Only">
+		<unCommentInXml file="${konakart.dir}/WEB-INF/web.xml"
+		         sectionName="KonaKart Messenger"/>
+	</target>
+	
+	<target name="enable_JSON_CAS" description="Enable JSON Custom Admin Service in konakartadmin web.xml - EE Only">
+		<antcall target="enable_JSON_CAS_warning" />
+		<antcall target="enable_JSON_CAS_enterprise" />
+	</target>
+
+	<target name="enable_JSON_CAS_warning" unless="kk.enterprise.present">
+		<echo message="JSON Custom Admin Service only available in the Enterprise version of KonaKart" />
+	</target>
+
+	<target name="enable_JSON_CAS_enterprise" if="kk.enterprise.present">
+		<echo message="Fix konakartadmin web.xml to start-up JSON Custom Admin Service Server" />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Admin Service Server'
+		         value='- JSON Custom Admin Service Server --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Admin Service Server --&gt; --&gt;'
+		         value='- JSON Custom Admin Service Server --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='End of JSON Custom Admin Service Server'
+		         value='&lt;!-- End of JSON Custom Admin Service Server' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JSON Custom Admin Service Server'
+		         value='&lt;!-- End of JSON Custom Admin Service Server' />
+				 
+		<echo message="Fix konakartadmin web.xml to start-up JSON Custom Admin Service Admin" />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Admin Service Admin'
+		         value='- JSON Custom Admin Service Admin --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Admin Service Admin --&gt; --&gt;'
+		         value='- JSON Custom Admin Service Admin --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='- JSON Custom Admin Service Admin --&gt; Admin'
+		         value='- JSON Custom Admin Service Admin --&gt;' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='End of JSON Custom Admin Service Admin'
+		         value='&lt;!-- End of JSON Custom Admin Service Admin' />
+		<replace file="${konakartadmin.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of JSON Custom Admin Service Admin'
+		         value='&lt;!-- End of JSON Custom Admin Service Admin' />
+	</target>
+
+	<target name="enable_MQ" description="Enable MQ in konakart web.xml"
+		if="kk.enterprise.present">
+		<echo message="Fix konakart web.xml to start-up MQ" />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- Apache ActiveMQ'
+		         value='- Apache ActiveMQ --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='- Apache ActiveMQ --&gt; --&gt;'
+		         value='- Apache ActiveMQ --&gt;' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='End of Apache ActiveMQ'
+		         value='&lt;!-- End of Apache ActiveMQ' />
+		<replace file="${konakart.dir}/WEB-INF/web.xml"
+		         token='&lt;!-- &lt;!-- End of Apache ActiveMQ'
+		         value='&lt;!-- End of Apache ActiveMQ' />
+	</target>
+
+	<target name="execute_sql_file" 
+	        description="Execute the specified SQL file">
+
+		<echo message="Execute the SQL commands in ${SQLInputFile}" />
+
+		<java classname="com.konakartadmin.db.ExecuteSQL"
+		      fork="true"
+		      maxmemory="256m">
+			<arg value="-i" />
+			<arg value="${SQLInputFile}" />
+			<arg value="-p" />
+			<arg value="${konakartadmin.classes.dir}/konakartadmin.properties" />
+			<arg value="-s" />
+			<arg value="store1" />
+			<arg value="-e" />
+			<arg value="UTF-8" />
+			<arg value="-d" />
+			<jvmarg value="-Xmx256M" />
+			<jvmarg value="-XX:MaxPermSize=128M" />
+			<classpath refid="kkadmin.run.path" />
+		</java>
+	</target>
+	
+	<target name="make_eclipse_project" description="Create an Eclipse Project for Developing the Struts-2 Storefront">
+		<echo message="Create an Eclipse Project for Developing the Struts-2 Storefront" />
+
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/kkeclipse">
+				<include name="src/**/*" />
+				<include name="WebContent/**/*" />
+			</fileset>
+		</delete>
+
+		<mkdir dir="${custom.home}/appEngEE/src" />
+		
+		<mkdir dir="${custom.home}/kkeclipse/src" />
+		<mkdir dir="${custom.home}/kkeclipse/build/classes" />
+		<mkdir dir="${custom.home}/kkeclipse/licenses" />
+		<mkdir dir="${custom.home}/kkeclipse/resources" />
+		<mkdir dir="${custom.home}/kkeclipse/WebContent" />
+		
+		<mkdir dir="${custom.home}/kkeclipse/src/com/konakart/bl/modules/others" />
+		<mkdir dir="${custom.home}/kkeclipse/src/com/konakartadmin/modules/others" />
+		
+		<copy todir="${custom.home}/kkeclipse/" includeEmptyDirs="No">
+			<fileset dir="${custom.home}/">
+				<include name="MANIFEST.MF" />
+				<include name="build.properties" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${custom.home}/kkeclipse/src"
+				includeEmptyDirs="No">
+			<fileset dir="${custom.home}/appn/src">
+				<include name="**/*.java" />
+				<include name="**/*.properties" />
+			</fileset>
+			<fileset dir="${custom.home}/appnEE/src">
+				<include name="**/*.java" />
+			</fileset>
+			<!--
+			<fileset dir="${custom.home}/engine/src">
+				<include name="**/*.java" />
+			</fileset>
+			<fileset dir="${custom.home}/engine/gensrc">
+				<include name="**/*.java" />
+			</fileset>
+			-->
+			<fileset dir="${custom.home}/modules/src">
+				<include name="**/*.java" />
+				<include name="**/*.properties" />
+				<include name="**/*.txt" />
+				<include name="**/*.TXT" />
+				<include name="**/*.ldif" />
+			</fileset>
+			<fileset dir="${custom.home}/appEngEE/src">
+				<include name="**/*.java" />
+			</fileset>
+			<fileset dir="${custom.home}/utils/src">
+				<include name="**/*.java" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${custom.home}/kkeclipse/resources"
+				includeEmptyDirs="No">
+			<fileset dir="${konakart.dir}/WEB-INF/classes">
+				<include name="**/*.properties" />
+				<include name="**/*.xml" />
+			</fileset>
+		</copy>
+
+		<copy todir="${custom.home}/kkeclipse/licenses/"
+				includeEmptyDirs="No">
+			<fileset dir="${custom.home}/..">
+				<include name="*LICENSE.txt" />
+			</fileset>
+		</copy>
+
+		<copy todir="${custom.home}/kkeclipse/WebContent/"
+				includeEmptyDirs="No">
+			<fileset dir="${konakart.dir}/">
+				<include name="fancybox/**/*" />
+				<include name="images/**/*" />
+				<include name="META-INF/**/*" />
+				<include name="script/**/*" />
+				<include name="styles/**/*" />
+				<include name="WEB-INF/**/*" />
+				<include name="*.html" />
+			</fileset>
+		</copy>
+
+		<!-- Grab the servlet-api.jar as well -->
+		<!--
+		<copy todir="${custom.home}/kkeclipse/WebContent/WEB-INF/lib"
+				includeEmptyDirs="No">
+			<fileset dir="${custom.home}/../lib">
+				<include name="servlet-api.jar" />
+			</fileset>
+		</copy>
+		-->
+		
+		<echo message="-----------------------------------------------------------------------------------" />
+		<echo message="Eclipse Project Created on disk - called kkeclipse" />
+		<echo message="Start Eclipse" />
+		<echo message="Create a tomcat server (see 'Servers' in Eclipse)" />
+		<echo message="Move the kkeclipse directory to another location for development if you wish" />
+		<echo message="Import the kkeclipse project using 'Import existing projects into Workspace'" />
+		<echo message="Assign a server for kkeclipse to use (define server under Project Properties)" />
+		<echo message="Edit, Debug and Run the KonaKart Storefront in Eclipse!" />	
+		<echo message="-----------------------------------------------------------------------------------" />
+	</target>
+
+	<target name="make_eclipse_wizard_project" 
+			description="Create an Eclipse Project for Developing the Product Creation Wizard"
+			if="konakartadmin_app.code.present">
+
+		<echo message="Create an Eclipse Project for Developing the Product Creation Wizard" />
+
+		<delete failonerror="true">
+			<fileset dir="${custom.home}/kkeclipseWizard">
+				<include name="src/**/*" />
+				<include name="WebContent/**/*" />
+			</fileset>
+		</delete>
+
+		<mkdir dir="${custom.home}/kkeclipseWizard/src" />
+		<mkdir dir="${custom.home}/kkeclipseWizard/build/classes" />
+		<mkdir dir="${custom.home}/kkeclipseWizard/licenses" />
+		<mkdir dir="${custom.home}/kkeclipseWizard/resources" />
+		<mkdir dir="${custom.home}/kkeclipseWizard/WebContent" />
+
+		<copy todir="${custom.home}/kkeclipseWizard/" includeEmptyDirs="No">
+			<fileset dir="${custom.home}/">
+				<include name="MANIFEST.MF" />
+				<include name="build.properties" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${custom.home}/kkeclipseWizard/"
+				includeEmptyDirs="No">
+			<fileset dir="${custom.home}/konakartadmin_app/">
+			</fileset>
+		</copy>
+		
+		<copy todir="${custom.home}/kkeclipseWizard/licenses/"
+				includeEmptyDirs="No">
+			<fileset dir="${custom.home}/..">
+				<include name="*LICENSE.txt" />
+			</fileset>
+		</copy>
+
+		<copy todir="${custom.home}/kkeclipseWizard/WebContent/"
+				includeEmptyDirs="No">
+			<fileset dir="${konakartadmin_app.dir}/">
+				<include name="WEB-INF/**/*" />
+			</fileset>
+		</copy>
+
+		<echo message="-----------------------------------------------------------------------------------" />
+		<echo message="Eclipse Product Creation Wizard Project Created on disk - called kkeclipseWizard" />
+		<echo message="Start Eclipse" />
+		<echo message="Create a tomcat server (see 'Servers' in Eclipse)" />
+		<echo message="Move the kkeclipseWizard directory to another location for development if you wish" />
+		<echo message="Import the kkeclipseWizard project using 'Import existing projects into Workspace'" />
+		<echo message="Assign a server for kkeclipseWizard to use (define server under Project Properties)" />
+		<echo message="Edit, Debug and Run the KonaKart Product Creation Wizard in Eclipse!" />	
+		<echo message="-----------------------------------------------------------------------------------" />
+	</target>
+	
+	<target name="build.custom.store.service"
+	        depends="debugenv,
+					 generate_customStoreService, 
+			         compile_customStoreService, 
+			         make_jar_customStoreService,
+			         deploy_customDB,
+                     deploy_customStoreService" />
+	
+	<target name="build.custom.store.service.json"
+	        depends="debugenv,
+					 generate_customStoreService, 
+					 generate_customStoreService_json, 
+			         compile_customStoreService_json, 
+			         make_jar_customStoreService,
+			         deploy_customDB,
+                     deploy_customStoreService,
+                     deploy_customStoreService_json" />
+
+	<target name="build.custom.admin.service"
+	        depends="debugenv,
+					 generate_customAdminService, 
+			         compile_customAdminService, 
+			         make_jar_customAdminService,
+			         deploy_customDB,
+                     deploy_customAdminService" />
+
+	<target name="build.custom.admin.service.json"
+	        depends="debugenv,
+					 generate_customAdminService, 
+					 generate_customAdminService_json, 
+			         compile_customAdminService_json, 
+			         make_jar_customAdminService,
+			         deploy_customDB,
+                     deploy_customAdminService,
+                     deploy_customAdminService_json" />
+
+	<target name="build.and.deploy.custom.services"
+	        depends="build,
+					 build.custom.store.service.json, 
+					 build.custom.admin.service.json" />
+
+	<target name="build"
+	        description="Compiles all the custom code and creates all the jars"
+	        depends="
+			debugenv,
+			clean,
+			clean_torque_classes,
+			create_torque_classes,
+			make_manifest_file,
+			generate_customStoreService,
+			generate_customStoreService_json,
+			generate_customAdminService,
+			generate_customAdminService_json,
+			compile_utils,
+			compile,
+            compile_modules,
+			compile_custom_engine,
+			compile_custom_adminengine,
+			compile_customStoreService_json,
+			compile_customAdminService_json,
+			make_jars
+		" />
+</project>

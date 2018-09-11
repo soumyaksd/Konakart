@@ -1,0 +1,160 @@
+<project name="konakart_soap_examples" default="build" basedir=".">
+
+	<!-- === PROPERTIES === -->
+	<property environment="env" />
+
+	<!-- build.local.properties will override the build.properties file if present -->
+	<property file="../custom/build.local.properties" />
+	<property file="../custom/build.properties" />
+	
+	<target name="kktimestamp">
+		<tstamp>
+			<format property="current.time" pattern="d-MMMM-yyyy hh:mm:ss.S" />
+		</tstamp>
+
+		<echo message="${message} ${current.time}" />      
+	</target>
+	
+	<!-- Set java.source if it hasn't already been defined -->
+	<condition property="java.source" value="1.7">
+		<not>
+			<isset property="java.source" />
+		</not>
+	</condition>
+
+	<!-- Set java.target if it hasn't already been defined -->
+	<condition property="java.target" value="1.7">
+		<not>
+			<isset property="java.target" />
+		</not>
+	</condition>
+	
+	<path id="axis.path">
+		<pathelement location="./lib/axis-1.4.jar" />
+		<pathelement location="./lib/axis-ant.jar" />
+		<pathelement location="./lib/axis-schema.jar" />
+		<pathelement location="./lib/commons-discovery-0.2.jar" />
+		<pathelement location="./lib/commons-logging-1.1.1.jar" />
+		<pathelement location="./lib/axis-jaxrpc-1.4.jar" />
+		<pathelement location="./lib/log4j-api-2.8.1.jar" />
+		<pathelement location="./lib/axis-saaj-1.4.jar" />
+		<pathelement location="./lib/wsdl4j-1.5.1.jar" />
+		<pathelement location="./lib/activation-1.1.1.jar" />
+		<pathelement location="./lib/javax.mail-api-1.5.5.jar" />
+		
+		<pathelement location="./lib/wss4j-1.5.5.jar" />
+		<pathelement location="./lib/xmlsec-1.4.2.jar" />
+		<pathelement location="./lib/bcprov-jdk14-140.jar" />
+		<pathelement location="./lib/xalan-2.7.1.jar" />
+	</path>
+
+	<path id="konakart.path">
+			<pathelement location="../webapps/konakart/WEB-INF/lib/commons-collections-3.2.jar" />
+			<pathelement location="../webapps/konakart/WEB-INF/lib/commons-configuration-1.7.jar" />
+			<pathelement location="../webapps/konakart/WEB-INF/lib/commons-lang-2.4.jar" />
+			<pathelement location="../webapps/konakart/WEB-INF/lib/commons-lang3-3.6.jar" />
+			<pathelement location="../webapps/konakart/WEB-INF/lib/konakart-${konakart.version}.jar" />
+			<pathelement location="../webapps/konakart/WEB-INF/lib/konakart_utils-${konakart.version}.jar" />
+			<path location="../webapps/konakart/WEB-INF/classes" />
+	</path>
+
+	<path id="compile.path">
+		<path refid="konakart.path" />
+		<path refid="axis.path" />
+	</path>
+
+	<path id="run.path">
+		<path location="./classes" />
+		<path refid="konakart.path" />
+		<path refid="axis.path" />
+	</path>
+
+	<path id="secure.run.path">
+		<path location="./src" />
+		<path refid="run.path" />
+	</path>
+
+	<target name="clean"
+	        description="Clears away everything that's created during a build">
+
+		<echo message="Cleanup..." />
+		<delete includeEmptyDirs="true" failonerror="false" >
+			<fileset dir="./classes" />
+			<fileset dir="./src/com/konakart/ws" />
+			<fileset dir="./src/com/konakart/wsapp" />
+		</delete>
+	</target>
+
+	<target name="axis_client_generation"
+	        description="Generate client stubs from the WSDL">
+
+		<echo message="Create the KonaKart client stubs from the WSDL" />
+		<java classname="org.apache.axis.wsdl.WSDL2Java"
+		      fork="true"
+		      failonerror="true">
+			<arg value="-o" />
+			<arg value="./src/" />
+			<arg value="./konakart.wsdl" />
+			<classpath refid="axis.path" />
+		</java>
+	</target>
+
+	<target name="compile" description="Compile the examples">
+		<antcall target="kktimestamp">
+			<param name="message" value="Compile" />
+		</antcall>
+
+		<echo message="Compile the examples" />
+
+		<mkdir dir="./classes" />
+		<javac srcdir="./src/"
+		       destdir="./classes"
+		       debug="off"
+		       fork="yes"
+		       source="${java.source}"
+		       target="${java.target}"
+		       includes="**/*.java"
+		       excludes="**/ApiExample.java">
+			<classpath refid="compile.path" />
+		</javac>
+	</target>
+
+	<target name="run" description="Run the little example program">
+		<antcall target="kktimestamp">
+			<param name="message" value="Run" />
+		</antcall>
+		
+		<java classname="com.konakart.AxisExample"
+		      fork="true"
+		      failonerror="true">
+			<classpath refid="run.path" />
+		</java>
+	</target>
+
+	<target name="run.secure" description="Run the little example program using ws-secure client. See docs for set-up instructions.">	
+		<antcall target="kktimestamp">
+			<param name="message" value="Run Secure" />
+		</antcall>
+		
+		<java classname="com.konakart.AxisExample"
+		      fork="true"
+		      failonerror="true">
+			<classpath refid="secure.run.path" />
+			<jvmarg value="-Daxis.ClientConfigFile=./src/client-config.wsdd" />
+			<jvmarg value="-Dkk.log4j.configuration=konakart-logging.xml" />
+			<jvmarg value="-Dkk.log4j.debug=true" />
+			<jvmarg value="-Dlog4j.debug=true" />
+		</java>
+	</target>
+
+	<target name="build"
+	        description="Creates the SOAP clients, compiles and runs a little example"
+	        depends="
+					clean,
+					axis_client_generation,
+                    compile,
+					run
+		    		"
+	/>
+
+</project>

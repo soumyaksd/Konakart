@@ -1,0 +1,40 @@
+<project name="deploymentBuild" default="build" basedir=".">
+
+	<!-- Properties -->
+	<property environment="env" />
+
+	<!-- KonaKart Home -->
+	<dirname property="kk.home" file="." />
+
+	<import file="./deploymentPatternSets.xml" />
+
+	<target name="copy_files" description="Copies duplicated files to set up KonaKart">
+		<!-- Copy konakartadmin libs -->
+		<copy todir="${kk.home}/webapps/konakartadmin/WEB-INF/lib/">
+			<fileset dir="${kk.home}/webapps/konakart/WEB-INF/lib">
+				<patternset refid="kk_konakartadmin" />
+			</fileset>
+		</copy>
+
+		<!-- Copy konakartadmin AdminMessages -->
+		<!-- Required in a small number of cases where konakartadmin functionality is run from the konakart webapp -->
+		<copy todir="${kk.home}/webapps/konakart/WEB-INF/classes/">
+			<fileset dir="${kk.home}/webapps/konakartadmin/WEB-INF/classes">
+				<include name="AdminMessages*.properties" />
+			</fileset>
+		</copy>
+
+		<!-- Copy birtviewer libs -->
+		<copy todir="${kk.home}/webapps/birtviewer/WEB-INF/lib/">
+			<fileset dir="${kk.home}/webapps/konakart/WEB-INF/lib">
+				<patternset refid="kk_birtviewer_lib" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="build"
+	        description="Copies duplicated jars to various locations"
+	        depends="
+					copy_files
+                    " />
+</project>

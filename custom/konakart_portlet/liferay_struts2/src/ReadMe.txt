@@ -1,0 +1,1 @@
+The class that has been modified belongs to struts2-tiles-plugin-kk-2.3.8.jar . It allows the storefront to work as a portlet.
