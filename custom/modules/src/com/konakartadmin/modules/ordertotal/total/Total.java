@@ -44,7 +44,8 @@ public class Total extends OrderTotalModule
 
     public String getModuleTitle()
     {
-        return getMsgs().getString("MODULE_ORDER_TOTAL_TOTAL_TEXT_TITLE");
+        System.out.println("getModuleTitle");
+		return getMsgs().getString("MODULE_ORDER_TOTAL_TOTAL_TEXT_TITLE");
     }
 
     /**
