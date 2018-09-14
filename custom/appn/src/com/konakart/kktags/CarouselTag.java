@@ -55,7 +55,7 @@ public class CarouselTag extends BaseTag
             if (prods != null && prods.length > 0)
             {
                 JspWriter writer = pageContext.getOut();
-
+		String s="";
                 StringBuffer sb = new StringBuffer();
 
                 append(sb, "<script type=\"text/javascript\">", debug);
